@@ -45,6 +45,7 @@ export default function Login() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Inclui cookies na requisição
         body: JSON.stringify({ email: cleanEmail, password: cleanPassword }),
       });
 
