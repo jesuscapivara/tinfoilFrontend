@@ -3,8 +3,10 @@
  * Gerencia autenticação centralizadamente
  */
 
-// Melhore a definição da URL base. 
-// Em produção usa a variável, em dev usa o proxy (se configurado) ou local direto.
+// LÓGICA CRÍTICA: Define a URL base
+// Em produção na Vercel, use a variável de ambiente sem barra no final.
+// Ex: https://tinfoilapp.discloud.app (SEM /api no final!)
+// O código adiciona os sufixos corretos (/api, /health, etc.)
 const BACKEND_URL = import.meta.env.VITE_BACKEND_API_URL || "http://localhost:8080";
 
 export interface BackendGame {
@@ -120,7 +122,7 @@ async function fetchBackend(
 }
 
 /**
- * Obtém a lista de jogos do backend
+ * Obtém a lista de jogos do backend (Rota Tinfoil API)
  * Usa credenciais do localStorage se disponíveis
  */
 export async function getBackendGames(
@@ -132,6 +134,7 @@ export async function getBackendGames(
     setTinfoilAuth(tinfoilUser, tinfoilPass);
   }
 
+  // ATENÇÃO: A rota é /api, não a raiz
   const response = await fetchBackend("/api", {
     method: "GET",
   });
