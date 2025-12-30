@@ -198,9 +198,95 @@ export default function ProfilePage() {
               </h2>
 
               <div className="space-y-4">
+                {/* Protocol */}
                 <div className="border-b border-primary/30 pb-4">
                   <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
-                    Usuário Tinfoil
+                    Protocol
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-mono text-primary font-bold flex-1">
+                      https
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyToClipboard("https")}
+                      className="border-primary/60 hover:border-primary"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Host */}
+                <div className="border-b border-primary/30 pb-4">
+                  <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
+                    Host
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-mono text-primary font-bold flex-1">
+                      {tinfoilHost.includes("/api")
+                        ? tinfoilHost.replace("/api", "")
+                        : tinfoilHost
+                            .replace("https://", "")
+                            .replace("http://", "")
+                            .split("/")[0]}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const host = tinfoilHost.includes("/api")
+                          ? tinfoilHost.replace("/api", "")
+                          : tinfoilHost
+                              .replace("https://", "")
+                              .replace("http://", "")
+                              .split("/")[0];
+                        copyToClipboard(host);
+                      }}
+                      className="border-primary/60 hover:border-primary"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Port */}
+                <div className="border-b border-primary/30 pb-4">
+                  <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
+                    Port
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-mono text-secondary font-bold flex-1">
+                      (em branco)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Path */}
+                <div className="border-b border-primary/30 pb-4">
+                  <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
+                    Path
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-mono text-primary font-bold flex-1">
+                      /api
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyToClipboard("/api")}
+                      className="border-primary/60 hover:border-primary"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Username */}
+                <div className="border-b border-primary/30 pb-4">
+                  <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
+                    Username
                   </p>
                   <div className="flex items-center gap-2">
                     <p className="text-lg font-mono text-primary font-bold flex-1">
@@ -219,22 +305,35 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
+                {/* Title */}
                 <div className="border-b border-primary/30 pb-4">
                   <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
-                    Host Tinfoil
+                    Title
                   </p>
                   <div className="flex items-center gap-2">
                     <p className="text-lg font-mono text-primary font-bold flex-1">
-                      {tinfoilHost}
+                      Capivara Shop
                     </p>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => copyToClipboard(tinfoilHost)}
+                      onClick={() => copyToClipboard("Capivara Shop")}
                       className="border-primary/60 hover:border-primary"
                     >
                       <Copy className="w-4 h-4" />
                     </Button>
+                  </div>
+                </div>
+
+                {/* Enable */}
+                <div className="border-b border-primary/30 pb-4">
+                  <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
+                    Enable
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-mono text-primary font-bold flex-1">
+                      Sim
+                    </p>
                   </div>
                 </div>
 
