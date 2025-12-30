@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -6,11 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock, Mail, AlertCircle } from "lucide-react";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_API_URL || "http://localhost:8080";
 
 export default function Login() {
   const [, setLocation] = useLocation();
+  const { isAuthenticated } = useAuth();
+
+  // Se já está autenticado, redireciona para dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation("/dashboard");
+    }
+  }, [isAuthenticated, setLocation]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
