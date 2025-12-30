@@ -22,15 +22,34 @@ export default function Login() {
     setLoading(true);
 
     try {
+      // Remove espaços em branco e normaliza o email
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPassword = password.trim();
+
       const response = await fetch(`${BACKEND_URL}/bridge/auth`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: cleanEmail, password: cleanPassword }),
       });
 
-      const data = await response.json();
+      // Verifica se a resposta é JSON
+      const contentType = response.headers.get("content-type");
+      let data;
+      
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(`Resposta inválida do servidor: ${text}`);
+      }
+
+      if (!response.ok) {
+        // Se não foi sucesso, mostra o erro
+        setError(data.error || `Erro ${response.status}: ${response.statusText}`);
+        return;
+      }
 
       if (data.success && data.token) {
         // Salva o token no localStorage
@@ -50,6 +69,7 @@ export default function Login() {
         setError(data.error || "Credenciais inválidas");
       }
     } catch (err) {
+      console.error("Erro no login:", err);
       setError(err instanceof Error ? err.message : "Erro ao fazer login");
     } finally {
       setLoading(false);
