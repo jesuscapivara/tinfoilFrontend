@@ -1,7 +1,10 @@
 /**
  * Cliente HTTP para comunicação com o backend lojaTinfoil
+ * Gerencia autenticação centralizadamente
  */
 
+// Melhore a definição da URL base. 
+// Em produção usa a variável, em dev usa o proxy (se configurado) ou local direto.
 const BACKEND_URL = import.meta.env.VITE_BACKEND_API_URL || "http://localhost:8080";
 
 export interface BackendGame {
@@ -48,24 +51,68 @@ export interface BackendHealth {
 }
 
 /**
- * Faz uma requisição ao backend
+ * Obtém credenciais Tinfoil do localStorage
+ */
+function getTinfoilAuth(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("tinfoil_auth");
+}
+
+/**
+ * Salva credenciais Tinfoil no localStorage (base64 encoded)
+ */
+export function setTinfoilAuth(username: string, password: string): void {
+  if (typeof window === "undefined") return;
+  const auth = btoa(`${username}:${password}`);
+  localStorage.setItem("tinfoil_auth", auth);
+}
+
+/**
+ * Remove credenciais Tinfoil do localStorage
+ */
+export function clearTinfoilAuth(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("tinfoil_auth");
+}
+
+/**
+ * Wrapper inteligente para Fetch
  */
 async function fetchBackend(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const url = `${BACKEND_URL}${endpoint}`;
+  // Remove barra duplicada se existir
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const url = `${BACKEND_URL}${cleanEndpoint}`;
   
+  // INJEÇÃO AUTOMÁTICA DE AUTH
+  // Se tiver as credenciais no localStorage, injeta aqui para não sujar os componentes
+  const storedAuth = getTinfoilAuth();
+  const authHeaders: HeadersInit = {};
+  
+  if (storedAuth && !options.headers?.['Authorization']) {
+    authHeaders['Authorization'] = `Basic ${storedAuth}`;
+  }
+
   const response = await fetch(url, {
     ...options,
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders,
       ...options.headers,
     },
-    credentials: "include",
+    // credentials: "include" - Só use se o backend setar Cookies
+    // Como é Basic Auth via Header, isso não é estritamente necessário
   });
 
   if (!response.ok) {
+    // Tratamento de erro 401 centralizado
+    if (response.status === 401) {
+      console.warn("Sessão expirada ou inválida");
+      clearTinfoilAuth();
+      // Opcional: window.location.href = '/login';
+    }
     throw new Error(`Backend request failed: ${response.status} ${response.statusText}`);
   }
 
@@ -74,19 +121,47 @@ async function fetchBackend(
 
 /**
  * Obtém a lista de jogos do backend
+ * Usa credenciais do localStorage se disponíveis
  */
 export async function getBackendGames(
   tinfoilUser?: string,
   tinfoilPass?: string
 ): Promise<BackendApiResponse> {
-  const headers: HeadersInit = {};
-  
+  // Se credenciais foram passadas, salva no localStorage
   if (tinfoilUser && tinfoilPass) {
-    const credentials = btoa(`${tinfoilUser}:${tinfoilPass}`);
-    headers.Authorization = `Basic ${credentials}`;
+    setTinfoilAuth(tinfoilUser, tinfoilPass);
   }
 
   const response = await fetchBackend("/api", {
+    method: "GET",
+  });
+
+  return response.json();
+}
+
+/**
+ * Obtém jogos via bridge (para dashboard) - RECOMENDADO
+ * Esta rota retorna dados mais ricos e formatados para humanos
+ */
+export async function getBackendGamesViaBridge(
+  jwtToken?: string
+): Promise<{
+  games: BackendGame[];
+  stats: {
+    base: number;
+    dlc: number;
+    update: number;
+    unknown: number;
+    total: number;
+  };
+}> {
+  const headers: HeadersInit = {};
+  
+  if (jwtToken) {
+    headers.Authorization = `Bearer ${jwtToken}`;
+  }
+
+  const response = await fetchBackend("/bridge/games", {
     method: "GET",
     headers,
   });
@@ -123,18 +198,38 @@ export async function refreshBackendIndex(
   tinfoilUser?: string,
   tinfoilPass?: string
 ): Promise<string> {
-  const headers: HeadersInit = {};
-  
+  // Se credenciais foram passadas, salva no localStorage
   if (tinfoilUser && tinfoilPass) {
-    const credentials = btoa(`${tinfoilUser}:${tinfoilPass}`);
-    headers.Authorization = `Basic ${credentials}`;
+    setTinfoilAuth(tinfoilUser, tinfoilPass);
   }
 
   const response = await fetchBackend("/refresh", {
     method: "GET",
-    headers,
   });
 
   return response.text();
 }
 
+/**
+ * Obtém dados do usuário via bridge
+ */
+export async function getBackendUserData(
+  jwtToken: string
+): Promise<{
+  email: string;
+  isAdmin: boolean;
+  isApproved: boolean;
+  tinfoilUser: string;
+  tinfoilPass: string | null;
+  host: string;
+  protocol: string;
+}> {
+  const response = await fetchBackend("/bridge/me", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${jwtToken}`,
+    },
+  });
+
+  return response.json();
+}

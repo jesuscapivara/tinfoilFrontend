@@ -26,6 +26,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    port: 3000, // Força o Vite a usar a porta 3000 (alinha com backend)
     host: true,
     allowedHosts: [
       ".manuspre.computer",
@@ -36,6 +37,35 @@ export default defineConfig({
       "localhost",
       "127.0.0.1",
     ],
+    proxy: {
+      // Proxy para evitar CORS em desenvolvimento
+      // Redireciona chamadas /api locais para o backend
+      '/api': {
+        target: process.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/indexing-status': {
+        target: process.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/health': {
+        target: process.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/refresh': {
+        target: process.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/bridge': {
+        target: process.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
     fs: {
       strict: true,
       deny: ["**/.*"],

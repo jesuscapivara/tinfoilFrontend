@@ -2,17 +2,23 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Database, Copy, CheckCircle2 } from "lucide-react";
-import { getBackendGames } from "@/lib/api";
+import { getBackendGamesViaBridge } from "@/lib/api";
 
 export default function GamesPage() {
   const { user } = useAuth();
+  // Usa /bridge/games que retorna dados mais ricos e formatados para humanos
+  // A rota /api é exclusiva para o console Switch (Tinfoil)
   const { data: gamesData } = useQuery({
-    queryKey: ["games"],
-    queryFn: () => getBackendGames(user?.tinfoilUser, undefined), // TODO: Obter senha do usuário
-    enabled: !!user?.tinfoilUser,
+    queryKey: ["games", "bridge"],
+    queryFn: () => {
+      // TODO: Obter JWT token do usuário logado
+      const token = localStorage.getItem("auth_token");
+      return getBackendGamesViaBridge(token || undefined);
+    },
+    enabled: !!user,
   });
   
-  const games = gamesData?.files || [];
+  const games = gamesData?.games || [];
 
   if (user?.role !== "admin") {
     return (
