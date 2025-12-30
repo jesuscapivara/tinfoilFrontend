@@ -71,11 +71,9 @@ export function useAuth(options?: UseAuthOptions) {
   const logout = useCallback(async () => {
     localStorage.removeItem("auth_token");
     setUser(null);
-    // Redireciona para login se necessário
-    if (redirectOnUnauthenticated) {
-      window.location.href = redirectPath;
-    }
-  }, [redirectOnUnauthenticated, redirectPath]);
+    // Sempre redireciona para login após logout
+    window.location.href = redirectPath;
+  }, [redirectPath]);
 
   useEffect(() => {
     fetchUser();

@@ -5,7 +5,7 @@ import { Upload, Play, Pause, X, CheckCircle2, AlertCircle } from "lucide-react"
 import { useState } from "react";
 
 export default function DownloadsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [fileInput, setFileInput] = useState<File | null>(null);
   const [downloads, setDownloads] = useState<any[]>([]);
 
@@ -26,10 +26,27 @@ export default function DownloadsPage() {
     setFileInput(null);
   };
 
-  if (user?.role !== "admin") {
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-primary text-2xl font-bold animate-pulse">
+          ▲ INITIALIZING SYSTEM ▼
+        </div>
+      </div>
+    );
+  }
+
+  // Se não está autenticado, redireciona (ProtectedRoute vai cuidar disso)
+  if (!user) {
+    return null;
+  }
+
+  // Downloads é apenas para admin
+  if (user.role !== "admin") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-destructive text-2xl font-bold">ACCESS DENIED</div>
+        <p className="text-secondary mt-4">Only administrators can access downloads</p>
       </div>
     );
   }

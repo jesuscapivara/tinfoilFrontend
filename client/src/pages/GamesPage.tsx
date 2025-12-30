@@ -5,13 +5,12 @@ import { Database, Copy, CheckCircle2 } from "lucide-react";
 import { getBackendGamesViaBridge } from "@/lib/api";
 
 export default function GamesPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   // Usa /bridge/games que retorna dados mais ricos e formatados para humanos
   // A rota /api é exclusiva para o console Switch (Tinfoil)
   const { data: gamesData } = useQuery({
     queryKey: ["games", "bridge"],
     queryFn: () => {
-      // TODO: Obter JWT token do usuário logado
       const token = localStorage.getItem("auth_token");
       return getBackendGamesViaBridge(token || undefined);
     },
@@ -20,12 +19,19 @@ export default function GamesPage() {
   
   const games = gamesData?.games || [];
 
-  if (user?.role !== "admin") {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-destructive text-2xl font-bold">ACCESS DENIED</div>
+        <div className="text-primary text-2xl font-bold animate-pulse">
+          ▲ INITIALIZING SYSTEM ▼
+        </div>
       </div>
     );
+  }
+
+  // Se não está autenticado, redireciona (ProtectedRoute vai cuidar disso)
+  if (!user) {
+    return null;
   }
 
   return (

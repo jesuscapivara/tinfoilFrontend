@@ -10,15 +10,28 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Navigation } from "./components/Navigation";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/login"} component={Login} />
-      <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/downloads"} component={DownloadsPage} />
-      <Route path={"/games"} component={GamesPage} />
+      <Route path={"/dashboard"}>
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/downloads"}>
+        <ProtectedRoute requireAdmin={true}>
+          <DownloadsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/games"}>
+        <ProtectedRoute>
+          <GamesPage />
+        </ProtectedRoute>
+      </Route>
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
