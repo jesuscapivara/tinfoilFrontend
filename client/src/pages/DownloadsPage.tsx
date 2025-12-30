@@ -10,7 +10,7 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   uploadTorrentFile,
@@ -24,6 +24,9 @@ export default function DownloadsPage() {
   const { user, loading: authLoading } = useAuth();
   const [fileInput, setFileInput] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [duplicateCountdowns, setDuplicateCountdowns] = useState<
+    Record<string, number>
+  >({});
   const queryClient = useQueryClient();
 
   // Mutation para upload (definida primeiro para garantir disponibilidade)
@@ -87,6 +90,61 @@ export default function DownloadsPage() {
     enabled: !!user,
     refetchInterval: 3000, // Atualiza a cada 3 segundos
   });
+
+  // Gerencia countdowns para duplicatas
+  useEffect(() => {
+    if (!downloads?.active) return;
+
+    downloads.active.forEach((download: any) => {
+      const isError = download.phase === "error";
+      const isDuplicate = isError && download.error?.includes("Duplicado");
+
+      if (isDuplicate && !duplicateCountdowns[download.id]) {
+        // Inicia countdown de 10 segundos
+        setDuplicateCountdowns(prev => ({
+          ...prev,
+          [download.id]: 10,
+        }));
+      } else if (!isDuplicate && duplicateCountdowns[download.id]) {
+        // Remove countdown se não for mais duplicata
+        setDuplicateCountdowns(prev => {
+          const newCountdowns = { ...prev };
+          delete newCountdowns[download.id];
+          return newCountdowns;
+        });
+      }
+    });
+  }, [downloads?.active, duplicateCountdowns]);
+
+  // Atualiza countdowns a cada segundo
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDuplicateCountdowns(prev => {
+        const updated: Record<string, number> = {};
+        const expiredIds: string[] = [];
+
+        Object.entries(prev).forEach(([id, count]) => {
+          if (count > 1) {
+            updated[id] = count - 1;
+          } else {
+            // Countdown chegou a zero, marca para remover
+            expiredIds.push(id);
+          }
+        });
+
+        // Se houver countdowns expirados, força atualização da lista
+        if (expiredIds.length > 0) {
+          // Força atualização da query para que o backend remova o item
+          queryClient.invalidateQueries({ queryKey: ["active-downloads"] });
+        }
+
+        // Retorna apenas os countdowns que ainda não expiraram
+        return updated;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [queryClient]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -235,9 +293,33 @@ export default function DownloadsPage() {
                             {download.error?.replace("Duplicado! ", "") ||
                               "Este jogo já existe no sistema"}
                           </p>
-                          <p className="text-xs text-secondary opacity-70">
-                            Removendo da fila automaticamente...
-                          </p>
+                          <div className="flex items-center justify-center gap-2 mt-4">
+                            <div className="relative w-16 h-16">
+                              <div className="absolute inset-0 rounded-full border-4 border-destructive/20" />
+                              <div
+                                className="absolute inset-0 rounded-full border-4 border-transparent border-t-destructive transition-transform duration-1000 ease-linear"
+                                style={{
+                                  transform: `rotate(${
+                                    360 -
+                                    (duplicateCountdowns[download.id] || 0) * 36
+                                  }deg)`,
+                                }}
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-2xl font-bold text-destructive">
+                                  {duplicateCountdowns[download.id] || 0}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-xs text-secondary opacity-70">
+                              Removendo em{" "}
+                              {duplicateCountdowns[download.id] || 0} segundo
+                              {(duplicateCountdowns[download.id] || 0) !== 1
+                                ? "s"
+                                : ""}
+                              ...
+                            </p>
+                          </div>
                         </div>
                       )}
 
