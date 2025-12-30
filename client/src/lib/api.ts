@@ -240,3 +240,19 @@ export async function getBackendUserData(
 
   return response.json();
 }
+
+/**
+ * Obtém lista de usuários pendentes de aprovação
+ */
+export async function getBackendPendingUsers(
+  jwtToken: string
+): Promise<any[]> {
+  const response = await fetchBackend("/bridge/users/pending", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${jwtToken}`,
+    },
+  });
+
+  return response.json();
+}

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Users, Zap, AlertCircle, CheckCircle2, Clock } from "lucide-react";
-import { getBackendIndexingStatus } from "@/lib/api";
+import { getBackendIndexingStatus, getBackendPendingUsers } from "@/lib/api";
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -11,6 +11,18 @@ export default function Dashboard() {
     queryKey: ["indexing-status"],
     queryFn: getBackendIndexingStatus,
     refetchInterval: 5000,
+  });
+
+  // Busca usuários pendentes apenas se for admin
+  const { data: pendingUsers = [] } = useQuery({
+    queryKey: ["pending-users"],
+    queryFn: async () => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) return [];
+      return getBackendPendingUsers(token);
+    },
+    enabled: user?.role === "admin",
+    refetchInterval: 10000,
   });
 
   if (authLoading) {
@@ -61,10 +73,10 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-secondary text-xs uppercase font-bold tracking-wider">
-                  Total Downloads
+                  Total Games
                 </p>
                 <p className="text-4xl font-bold text-primary mt-3">
-                  {stats?.totalDownloads || 0}
+                  {indexingStatus?.totalGames || indexingStatus?.stats?.total || 0}
                 </p>
               </div>
               <Download className="w-16 h-16 text-secondary opacity-20 group-hover:opacity-40 transition-opacity" />
@@ -75,10 +87,10 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-secondary text-xs uppercase font-bold tracking-wider">
-                  Total Size
+                  Base Games
                 </p>
                 <p className="text-4xl font-bold text-primary mt-3">
-                  {stats?.totalSize || "0 MB"}
+                  {indexingStatus?.stats?.base || 0}
                 </p>
               </div>
               <Zap className="w-16 h-16 text-secondary opacity-20 group-hover:opacity-40 transition-opacity" />
@@ -89,11 +101,11 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-secondary text-xs uppercase font-bold tracking-wider">
-                  Last Download
+                  Last Update
                 </p>
                 <p className="text-lg text-primary mt-3 font-mono">
-                  {stats?.lastDownload
-                    ? new Date(stats.lastDownload).toLocaleDateString("pt-BR")
+                  {indexingStatus?.lastUpdate
+                    ? new Date(indexingStatus.lastUpdate).toLocaleDateString("pt-BR")
                     : "N/A"}
                 </p>
               </div>
