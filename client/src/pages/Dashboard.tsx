@@ -2,7 +2,14 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Users, Zap, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import {
+  Download,
+  Users,
+  Zap,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+} from "lucide-react";
 import { getBackendIndexingStatus, getBackendPendingUsers } from "@/lib/api";
 
 export default function Dashboard() {
@@ -42,26 +49,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background grid-bg">
-      {/* Header */}
-      <div className="border-b-2 border-primary bg-card/80 backdrop-blur">
-        <div className="container py-8">
-          <div className="flex justify-between items-start gap-6">
-            <div>
-              <h1 className="text-4xl font-bold text-primary uppercase tracking-widest">
-                COMMAND CENTER
-              </h1>
-              <p className="text-secondary text-sm mt-3 font-mono">
-                {user.role === "admin" ? "▸ ADMIN TERMINAL ◂" : "▸ USER INTERFACE ◂"}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-foreground font-mono text-sm">{user.email}</p>
-              <p className="text-secondary text-xs mt-1">STATUS: ● ONLINE</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className="container py-12">
         {/* Stats Grid */}
@@ -73,7 +60,9 @@ export default function Dashboard() {
                   Total Games
                 </p>
                 <p className="text-4xl font-bold text-primary mt-3">
-                  {indexingStatus?.totalGames || indexingStatus?.stats?.total || 0}
+                  {indexingStatus?.totalGames ||
+                    indexingStatus?.stats?.total ||
+                    0}
                 </p>
               </div>
               <Download className="w-16 h-16 text-secondary opacity-20 group-hover:opacity-40 transition-opacity" />
@@ -102,7 +91,9 @@ export default function Dashboard() {
                 </p>
                 <p className="text-lg text-primary mt-3 font-mono">
                   {indexingStatus?.lastUpdate
-                    ? new Date(indexingStatus.lastUpdate).toLocaleDateString("pt-BR")
+                    ? new Date(indexingStatus.lastUpdate).toLocaleDateString(
+                        "pt-BR"
+                      )
                     : "N/A"}
                 </p>
               </div>
@@ -138,15 +129,20 @@ export default function Dashboard() {
 
               {pendingUsers && pendingUsers.length > 0 ? (
                 <div className="space-y-3">
-                  {pendingUsers.map((pendingUser) => (
+                  {pendingUsers.map(pendingUser => (
                     <div
                       key={pendingUser.id}
                       className="flex items-center justify-between p-4 border-2 border-primary/50 bg-input hover:bg-input/80 transition-colors"
                     >
                       <div className="flex-1">
-                        <p className="text-foreground font-mono font-bold">{pendingUser.email}</p>
+                        <p className="text-foreground font-mono font-bold">
+                          {pendingUser.email}
+                        </p>
                         <p className="text-xs text-secondary mt-1">
-                          Registered: {new Date(pendingUser.createdAt).toLocaleDateString("pt-BR")}
+                          Registered:{" "}
+                          {new Date(pendingUser.createdAt).toLocaleDateString(
+                            "pt-BR"
+                          )}
                         </p>
                       </div>
                       <div className="flex gap-2">
@@ -209,12 +205,16 @@ export default function Dashboard() {
                   {user.isApproved ? (
                     <>
                       <CheckCircle2 className="w-5 h-5 text-secondary" />
-                      <p className="text-lg text-secondary font-bold">APPROVED</p>
+                      <p className="text-lg text-secondary font-bold">
+                        APPROVED
+                      </p>
                     </>
                   ) : (
                     <>
                       <AlertCircle className="w-5 h-5 text-destructive" />
-                      <p className="text-lg text-destructive font-bold">PENDING APPROVAL</p>
+                      <p className="text-lg text-destructive font-bold">
+                        PENDING APPROVAL
+                      </p>
                     </>
                   )}
                 </div>

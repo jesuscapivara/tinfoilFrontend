@@ -8,11 +8,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock, Mail, AlertCircle } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_API_URL || "http://localhost:8080";
+const BACKEND_URL =
+  import.meta.env.VITE_BACKEND_API_URL || "http://localhost:8080";
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, refresh } = useAuth();
 
   // Se já está autenticado, redireciona para dashboard
   useEffect(() => {
@@ -48,15 +49,21 @@ export default function Login() {
       });
 
       console.log("[LOGIN] Status da resposta:", response.status);
-      console.log("[LOGIN] Headers:", Object.fromEntries(response.headers.entries()));
+      console.log(
+        "[LOGIN] Headers:",
+        Object.fromEntries(response.headers.entries())
+      );
 
       // Verifica se a resposta é JSON
       const contentType = response.headers.get("content-type");
       let data;
-      
+
       if (contentType && contentType.includes("application/json")) {
         data = await response.json();
-        console.log("[LOGIN] Dados recebidos:", { ...data, token: data.token ? "***TOKEN***" : "SEM TOKEN" });
+        console.log("[LOGIN] Dados recebidos:", {
+          ...data,
+          token: data.token ? "***TOKEN***" : "SEM TOKEN",
+        });
       } else {
         const text = await response.text();
         console.error("[LOGIN] Resposta não é JSON:", text);
@@ -66,7 +73,9 @@ export default function Login() {
       if (!response.ok) {
         // Se não foi sucesso, mostra o erro
         console.error("[LOGIN] Erro na resposta:", data);
-        setError(data.error || `Erro ${response.status}: ${response.statusText}`);
+        setError(
+          data.error || `Erro ${response.status}: ${response.statusText}`
+        );
         return;
       }
 
@@ -75,7 +84,11 @@ export default function Login() {
         // Salva o token no localStorage
         localStorage.setItem("auth_token", data.token);
         console.log("[LOGIN] Token salvo no localStorage");
-        
+
+        // Atualiza o estado de autenticação imediatamente
+        await refresh();
+        console.log("[LOGIN] Estado de autenticação atualizado");
+
         // Redireciona para o dashboard
         if (data.redirect) {
           // Se o backend retornou uma URL completa, extrai o path
@@ -130,7 +143,7 @@ export default function Login() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 required
                 className="pl-10 cyber-input"
                 placeholder="seu@email.com"
@@ -148,7 +161,7 @@ export default function Login() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
                 required
                 className="pl-10 cyber-input"
                 placeholder="••••••••"
@@ -180,4 +193,3 @@ export default function Login() {
     </div>
   );
 }
-

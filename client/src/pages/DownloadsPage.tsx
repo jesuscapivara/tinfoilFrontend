@@ -1,29 +1,108 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, Play, Pause, X, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  Upload,
+  Play,
+  Pause,
+  X,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  uploadTorrentFile,
+  getActiveDownloads,
+  cancelDownload,
+} from "@/lib/api";
+import { toast } from "sonner";
 
 export default function DownloadsPage() {
   const { user, loading: authLoading } = useAuth();
   const [fileInput, setFileInput] = useState<File | null>(null);
-  const [downloads, setDownloads] = useState<any[]>([]);
+  const queryClient = useQueryClient();
+
+  // Busca downloads ativos
+  const {
+    data: downloads = { active: [], queue: [] },
+    isLoading: downloadsLoading,
+  } = useQuery({
+    queryKey: ["active-downloads"],
+    queryFn: async () => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) throw new Error("Token não encontrado");
+      return getActiveDownloads(token);
+    },
+    enabled: !!user,
+    refetchInterval: 3000, // Atualiza a cada 3 segundos
+  });
+
+  // Mutation para upload
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) throw new Error("Token não encontrado");
+
+      // Converte arquivo para base64
+      const fileData = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Remove o prefixo data:application/octet-stream;base64,
+          const base64 = result.split(",")[1] || result;
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      return uploadTorrentFile(file.name, fileData, token);
+    },
+    onSuccess: () => {
+      toast.success("Torrent enviado com sucesso!");
+      setFileInput(null);
+      queryClient.invalidateQueries({ queryKey: ["active-downloads"] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao enviar torrent: ${error.message}`);
+    },
+  });
+
+  // Mutation para cancelar download
+  const cancelMutation = useMutation({
+    mutationFn: async (downloadId: string) => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) throw new Error("Token não encontrado");
+      return cancelDownload(downloadId, token);
+    },
+    onSuccess: () => {
+      toast.success("Download cancelado");
+      queryClient.invalidateQueries({ queryKey: ["active-downloads"] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao cancelar download: ${error.message}`);
+    },
+  });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.name.endsWith(".torrent")) {
       setFileInput(file);
     } else {
-      alert("Please select a valid .torrent file");
+      toast.error("Por favor, selecione um arquivo .torrent válido");
     }
   };
 
   const handleUpload = async () => {
     if (!fileInput) return;
-    
-    // TODO: Implementar upload via backend
-    alert("Upload functionality will be implemented via backend API");
-    setFileInput(null);
+    uploadMutation.mutate(fileInput);
+  };
+
+  const handleCancel = (downloadId: string) => {
+    if (confirm("Tem certeza que deseja cancelar este download?")) {
+      cancelMutation.mutate(downloadId);
+    }
   };
 
   if (authLoading) {
@@ -41,16 +120,6 @@ export default function DownloadsPage() {
     return null;
   }
 
-  // Downloads é apenas para admin
-  if (user.role !== "admin") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-destructive text-2xl font-bold">ACCESS DENIED</div>
-        <p className="text-secondary mt-4">Only administrators can access downloads</p>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background grid-bg">
       {/* Header */}
@@ -59,7 +128,9 @@ export default function DownloadsPage() {
           <h1 className="text-3xl font-bold text-primary uppercase tracking-widest">
             Download Manager
           </h1>
-          <p className="text-secondary text-sm mt-2 font-mono">Manage torrent downloads and queue</p>
+          <p className="text-secondary text-sm mt-2 font-mono">
+            Manage torrent downloads and queue
+          </p>
         </div>
       </div>
 
@@ -69,7 +140,7 @@ export default function DownloadsPage() {
           <h2 className="text-xl font-bold text-primary uppercase tracking-wider mb-6">
             Upload Torrent
           </h2>
-          
+
           <div className="space-y-4">
             <div className="border-2 border-dashed border-primary/60 p-8 text-center hover:border-primary transition-colors bg-input/30">
               <Upload className="w-16 h-16 text-secondary mx-auto mb-4 opacity-60" />
@@ -82,7 +153,9 @@ export default function DownloadsPage() {
               />
               <label htmlFor="torrent-input" className="cursor-pointer block">
                 <p className="text-foreground font-bold mb-2">
-                  {fileInput ? `✓ ${fileInput.name}` : "Click to select .torrent file"}
+                  {fileInput
+                    ? `✓ ${fileInput.name}`
+                    : "Click to select .torrent file"}
                 </p>
                 <p className="text-xs text-secondary">or drag and drop</p>
               </label>
@@ -93,7 +166,9 @@ export default function DownloadsPage() {
               onClick={handleUpload}
               disabled={!fileInput || uploadMutation.isPending}
             >
-              {uploadMutation.isPending ? "⟳ UPLOADING..." : "▶ QUEUE DOWNLOAD"}
+              {uploadMutation.isPending
+                ? "⟳ UPLOADING..."
+                : "▶ QUEUE DOWNLOAD"}
             </Button>
           </div>
         </Card>
@@ -106,14 +181,22 @@ export default function DownloadsPage() {
             <span className="text-secondary">◂</span>
           </h2>
 
-          {downloads?.active && downloads.active.length > 0 ? (
+          {downloadsLoading ? (
+            <Card className="cyber-card text-center py-12">
+              <div className="text-primary text-xl font-bold animate-pulse">
+                ▲ LOADING ▼
+              </div>
+            </Card>
+          ) : downloads?.active && downloads.active.length > 0 ? (
             <div className="space-y-4">
               {downloads.active.map((download: any) => (
                 <Card key={download.id} className="cyber-card">
                   <div className="space-y-4">
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1">
-                        <h3 className="text-lg font-bold text-foreground">{download.name}</h3>
+                        <h3 className="text-lg font-bold text-foreground">
+                          {download.name}
+                        </h3>
                         <p className="text-xs text-secondary mt-2 font-mono">
                           {download.phase === "downloading" && "⬇ DOWNLOADING"}
                           {download.phase === "uploading" && "⬆ UPLOADING"}
@@ -123,16 +206,16 @@ export default function DownloadsPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-3xl font-bold text-primary">
-                          {download.downloadPercent.toFixed(0)}%
+                          {download.download?.percent?.toFixed(0) || 0}%
                         </p>
                       </div>
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="cyber-progress">
+                    <div className="w-full h-2 bg-primary/20 border border-primary/50">
                       <div
-                        className="cyber-progress-bar"
-                        style={{ width: `${download.downloadPercent}%` }}
+                        className="h-full bg-primary transition-all duration-300"
+                        style={{ width: `${download.download?.percent || 0}%` }}
                       />
                     </div>
 
@@ -140,31 +223,39 @@ export default function DownloadsPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                       <div className="border border-primary/30 p-3 bg-input/50">
                         <p className="text-secondary font-bold">Downloaded</p>
-                        <p className="text-foreground font-mono mt-1">{download.downloaded || "0 MB"}</p>
+                        <p className="text-foreground font-mono mt-1">
+                          {download.download?.downloaded || "0 MB"}
+                        </p>
                       </div>
                       <div className="border border-primary/30 p-3 bg-input/50">
                         <p className="text-secondary font-bold">Speed</p>
-                        <p className="text-foreground font-mono mt-1">{download.downloadSpeed || "-- MB/s"}</p>
+                        <p className="text-foreground font-mono mt-1">
+                          {download.download?.speed || "-- MB/s"}
+                        </p>
                       </div>
                       <div className="border border-primary/30 p-3 bg-input/50">
                         <p className="text-secondary font-bold">ETA</p>
-                        <p className="text-foreground font-mono mt-1">{download.downloadEta || "--:--"}</p>
+                        <p className="text-foreground font-mono mt-1">
+                          {download.download?.eta || "--:--"}
+                        </p>
                       </div>
                       <div className="border border-primary/30 p-3 bg-input/50">
                         <p className="text-secondary font-bold">Peers</p>
-                        <p className="text-foreground font-mono mt-1">{download.peers || 0}</p>
+                        <p className="text-foreground font-mono mt-1">
+                          {download.download?.peers || 0}
+                        </p>
                       </div>
                     </div>
 
                     {/* Controls */}
                     <div className="flex gap-2 pt-2">
-                      <Button size="sm" className="cyber-btn flex-1 text-xs">
-                        <Play className="w-4 h-4 mr-2" /> RESUME
-                      </Button>
-                      <Button size="sm" className="cyber-btn flex-1 text-xs">
-                        <Pause className="w-4 h-4 mr-2" /> PAUSE
-                      </Button>
-                      <Button size="sm" variant="destructive" className="flex-1 text-xs border-2 border-destructive">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="flex-1 text-xs border-2 border-destructive"
+                        onClick={() => handleCancel(download.id)}
+                        disabled={cancelMutation.isPending}
+                      >
                         <X className="w-4 h-4 mr-2" /> CANCEL
                       </Button>
                     </div>
@@ -197,10 +288,16 @@ export default function DownloadsPage() {
                     className="flex items-center justify-between p-4 border border-primary/50 bg-input hover:bg-input/80 transition-colors"
                   >
                     <div className="flex items-center gap-4 flex-1">
-                      <span className="text-secondary font-bold text-lg w-8 text-center">#{index + 1}</span>
-                      <span className="text-foreground font-mono flex-1 truncate">{item.name}</span>
+                      <span className="text-secondary font-bold text-lg w-8 text-center">
+                        #{index + 1}
+                      </span>
+                      <span className="text-foreground font-mono flex-1 truncate">
+                        {item.name}
+                      </span>
                     </div>
-                    <span className="text-xs text-secondary font-bold">⏳ QUEUED</span>
+                    <span className="text-xs text-secondary font-bold">
+                      ⏳ QUEUED
+                    </span>
                   </div>
                 ))}
               </div>

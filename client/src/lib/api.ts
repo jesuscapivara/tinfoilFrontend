@@ -7,7 +7,8 @@
 // Em produção na Vercel, use a variável de ambiente sem barra no final.
 // Ex: https://tinfoilapp.discloud.app (SEM /api no final!)
 // O código adiciona os sufixos corretos (/api, /health, etc.)
-const BACKEND_URL = import.meta.env.VITE_BACKEND_API_URL || "http://localhost:8080";
+const BACKEND_URL =
+  import.meta.env.VITE_BACKEND_API_URL || "http://localhost:8080";
 
 export interface BackendGame {
   url: string;
@@ -86,19 +87,24 @@ async function fetchBackend(
 ): Promise<Response> {
   // Garante que o endpoint comece com /
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  
+
   // Remove barra final da URL base se houver, para evitar //
-  const cleanBase = BACKEND_URL.endsWith("/") ? BACKEND_URL.slice(0, -1) : BACKEND_URL;
-  
+  const cleanBase = BACKEND_URL.endsWith("/")
+    ? BACKEND_URL.slice(0, -1)
+    : BACKEND_URL;
+
   const url = `${cleanBase}${cleanEndpoint}`;
-  
+
   // INJEÇÃO AUTOMÁTICA DE AUTH
   // Se tiver as credenciais no localStorage, injeta aqui para não sujar os componentes
   const storedAuth = getTinfoilAuth();
-  const authHeaders: HeadersInit = {};
-  
-  if (storedAuth && !options.headers?.['Authorization']) {
-    authHeaders['Authorization'] = `Basic ${storedAuth}`;
+  const authHeaders: Record<string, string> = {};
+
+  if (
+    storedAuth &&
+    !(options.headers as Record<string, string>)?.["Authorization"]
+  ) {
+    authHeaders["Authorization"] = `Basic ${storedAuth}`;
   }
 
   const response = await fetch(url, {
@@ -119,7 +125,9 @@ async function fetchBackend(
       clearTinfoilAuth();
       // Opcional: window.location.href = '/login';
     }
-    throw new Error(`Backend request failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Backend request failed: ${response.status} ${response.statusText}`
+    );
   }
 
   return response;
@@ -150,9 +158,7 @@ export async function getBackendGames(
  * Obtém jogos via bridge (para dashboard) - RECOMENDADO
  * Esta rota retorna dados mais ricos e formatados para humanos
  */
-export async function getBackendGamesViaBridge(
-  jwtToken?: string
-): Promise<{
+export async function getBackendGamesViaBridge(jwtToken?: string): Promise<{
   games: BackendGame[];
   stats: {
     base: number;
@@ -163,7 +169,7 @@ export async function getBackendGamesViaBridge(
   };
 }> {
   const headers: HeadersInit = {};
-  
+
   if (jwtToken) {
     headers.Authorization = `Bearer ${jwtToken}`;
   }
@@ -220,9 +226,7 @@ export async function refreshBackendIndex(
 /**
  * Obtém dados do usuário via bridge
  */
-export async function getBackendUserData(
-  jwtToken: string
-): Promise<{
+export async function getBackendUserData(jwtToken: string): Promise<{
   email: string;
   isAdmin: boolean;
   isApproved: boolean;
@@ -244,11 +248,143 @@ export async function getBackendUserData(
 /**
  * Obtém lista de usuários pendentes de aprovação
  */
-export async function getBackendPendingUsers(
-  jwtToken: string
-): Promise<any[]> {
+export async function getBackendPendingUsers(jwtToken: string): Promise<any[]> {
   const response = await fetchBackend("/bridge/users/pending", {
     method: "GET",
+    headers: {
+      Authorization: `Bearer ${jwtToken}`,
+    },
+  });
+
+  return response.json();
+}
+
+/**
+ * Faz upload de arquivo torrent
+ */
+export async function uploadTorrentFile(
+  fileName: string,
+  fileData: string,
+  jwtToken: string
+): Promise<{ success: boolean; downloadId: string; message: string }> {
+  const response = await fetchBackend("/bridge/upload", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${jwtToken}`,
+    },
+    body: JSON.stringify({ fileName, fileData }),
+  });
+
+  return response.json();
+}
+
+/**
+ * Obtém downloads ativos e fila
+ */
+export async function getActiveDownloads(jwtToken: string): Promise<{
+  active: any[];
+  queue: any[];
+}> {
+  const response = await fetchBackend("/bridge/status", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${jwtToken}`,
+    },
+  });
+
+  return response.json();
+}
+
+/**
+ * Cancela um download
+ */
+// ═══════════════════════════════════════════════
+// TELEGRAM INDEXER - BUSCA E DOWNLOAD DE JOGOS
+// ═══════════════════════════════════════════════
+
+export interface SearchGame {
+  name: string;
+  command: string;
+  size: string;
+}
+
+export interface SearchGamesResponse {
+  success: boolean;
+  games: SearchGame[];
+}
+
+export interface DownloadFromSearchResponse {
+  success: boolean;
+  message: string;
+  id: string;
+  name: string;
+  position?: number;
+  queued: boolean;
+}
+
+/**
+ * Busca jogos no bot do Telegram
+ */
+export async function searchGames(
+  searchTerm: string,
+  jwtToken?: string
+): Promise<SearchGame[]> {
+  const token = jwtToken || localStorage.getItem("auth_token");
+  if (!token) {
+    throw new Error("Token de autenticação não encontrado");
+  }
+
+  const response = await fetchBackend("/bridge/search-games", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ searchTerm }),
+  });
+
+  const data: SearchGamesResponse = await response.json();
+  if (!data.success) {
+    throw new Error("Erro ao buscar jogos");
+  }
+
+  return data.games;
+}
+
+/**
+ * Faz download de um jogo específico via Telegram
+ */
+export async function downloadFromSearch(
+  command: string,
+  gameName: string,
+  jwtToken?: string
+): Promise<DownloadFromSearchResponse> {
+  const token = jwtToken || localStorage.getItem("auth_token");
+  if (!token) {
+    throw new Error("Token de autenticação não encontrado");
+  }
+
+  const response = await fetchBackend("/bridge/download-from-search", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ command, gameName }),
+  });
+
+  const data: DownloadFromSearchResponse = await response.json();
+  if (!data.success) {
+    throw new Error(data.message || "Erro ao iniciar download");
+  }
+
+  return data;
+}
+
+export async function cancelDownload(
+  downloadId: string,
+  jwtToken: string
+): Promise<{ success: boolean; message: string }> {
+  const response = await fetchBackend(`/bridge/cancel/${downloadId}`, {
+    method: "POST",
     headers: {
       Authorization: `Bearer ${jwtToken}`,
     },

@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -45,30 +44,30 @@
 
 :root {
   /* Cyberpunk Neon Colors - Improved Contrast */
-  --primary: oklch(0.75 0.25 300);  /* Bright Magenta Neon */
-  --primary-foreground: oklch(0.02 0 0);  /* Near Black */
-  --secondary: oklch(0.75 0.25 180);  /* Bright Cyan Neon */
+  --primary: oklch(0.75 0.25 300); /* Bright Magenta Neon */
+  --primary-foreground: oklch(0.02 0 0); /* Near Black */
+  --secondary: oklch(0.75 0.25 180); /* Bright Cyan Neon */
   --secondary-foreground: oklch(0.02 0 0);
-  --accent: oklch(0.75 0.25 300);  /* Magenta */
+  --accent: oklch(0.75 0.25 300); /* Magenta */
   --accent-foreground: oklch(0.02 0 0);
-  
+
   /* Dark Background */
-  --background: oklch(0.02 0 0);  /* Pure Black */
-  --foreground: oklch(0.95 0 0);  /* Near White for text */
-  --card: oklch(0.08 0 0);  /* Very Dark Gray */
+  --background: oklch(0.02 0 0); /* Pure Black */
+  --foreground: oklch(0.95 0 0); /* Near White for text */
+  --card: oklch(0.08 0 0); /* Very Dark Gray */
   --card-foreground: oklch(0.95 0 0);
   --popover: oklch(0.08 0 0);
   --popover-foreground: oklch(0.95 0 0);
-  
+
   /* Muted */
   --muted: oklch(0.25 0 0);
   --muted-foreground: oklch(0.75 0.25 300);
-  
+
   /* Border and Input */
   --border: oklch(0.75 0.25 300);
   --input: oklch(0.12 0 0);
   --ring: oklch(0.75 0.25 300);
-  
+
   /* Sidebar */
   --sidebar: oklch(0.08 0 0);
   --sidebar-foreground: oklch(0.95 0 0);
@@ -78,20 +77,20 @@
   --sidebar-accent-foreground: oklch(0.02 0 0);
   --sidebar-border: oklch(0.75 0.25 300);
   --sidebar-ring: oklch(0.75 0.25 300);
-  
+
   /* Chart colors */
   --chart-1: oklch(0.75 0.25 300);
   --chart-2: oklch(0.75 0.25 180);
   --chart-3: oklch(0.65 0.22 300);
   --chart-4: oklch(0.65 0.22 180);
   --chart-5: oklch(0.55 0.2 300);
-  
+
   /* Destructive */
-  --destructive: oklch(0.65 0.25 25);  /* Bright Red */
+  --destructive: oklch(0.65 0.25 25); /* Bright Red */
   --destructive-foreground: oklch(0.02 0 0);
-  
+
   /* Radius */
-  --radius: 0px;  /* Sharp corners for cyberpunk */
+  --radius: 0px; /* Sharp corners for cyberpunk */
 }
 
 .dark {
@@ -136,10 +135,15 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Space Mono', monospace;
+    font-family: "Space Mono", monospace;
   }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Orbitron', sans-serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Orbitron", sans-serif;
     font-weight: 900;
     letter-spacing: 0.05em;
     @apply text-foreground;
@@ -199,13 +203,18 @@
   }
 
   .cyber-card::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, hsl(300, 100%, 60%), transparent);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(300, 100%, 60%),
+      transparent
+    );
   }
 
   .cyber-btn {
@@ -215,7 +224,9 @@
 
   .cyber-btn:hover {
     @apply bg-primary text-primary-foreground;
-    box-shadow: 0 0 20px rgba(255, 0, 255, 0.8), inset 0 0 20px rgba(255, 0, 255, 0.2);
+    box-shadow:
+      0 0 20px rgba(255, 0, 255, 0.8),
+      inset 0 0 20px rgba(255, 0, 255, 0.2);
   }
 
   .cyber-btn:active {
@@ -241,9 +252,31 @@
   }
 
   .grid-bg {
-    background-image: 
-      linear-gradient(0deg, transparent 24%, rgba(255, 0, 255, 0.03) 25%, rgba(255, 0, 255, 0.03) 26%, transparent 27%, transparent 74%, rgba(255, 0, 255, 0.03) 75%, rgba(255, 0, 255, 0.03) 76%, transparent 77%, transparent),
-      linear-gradient(90deg, transparent 24%, rgba(255, 0, 255, 0.03) 25%, rgba(255, 0, 255, 0.03) 26%, transparent 27%, transparent 74%, rgba(255, 0, 255, 0.03) 75%, rgba(255, 0, 255, 0.03) 76%, transparent 77%, transparent);
+    background-image:
+      linear-gradient(
+        0deg,
+        transparent 24%,
+        rgba(255, 0, 255, 0.03) 25%,
+        rgba(255, 0, 255, 0.03) 26%,
+        transparent 27%,
+        transparent 74%,
+        rgba(255, 0, 255, 0.03) 75%,
+        rgba(255, 0, 255, 0.03) 76%,
+        transparent 77%,
+        transparent
+      ),
+      linear-gradient(
+        90deg,
+        transparent 24%,
+        rgba(255, 0, 255, 0.03) 25%,
+        rgba(255, 0, 255, 0.03) 26%,
+        transparent 27%,
+        transparent 74%,
+        rgba(255, 0, 255, 0.03) 75%,
+        rgba(255, 0, 255, 0.03) 76%,
+        transparent 77%,
+        transparent
+      );
     background-size: 50px 50px;
   }
 }
@@ -283,13 +316,19 @@
 
   @keyframes glitch {
     0% {
-      text-shadow: -2px 0 rgba(0, 255, 255, 1), 2px 0 rgba(255, 0, 255, 1);
+      text-shadow:
+        -2px 0 rgba(0, 255, 255, 1),
+        2px 0 rgba(255, 0, 255, 1);
     }
     50% {
-      text-shadow: 2px 0 rgba(0, 255, 255, 1), -2px 0 rgba(255, 0, 255, 1);
+      text-shadow:
+        2px 0 rgba(0, 255, 255, 1),
+        -2px 0 rgba(255, 0, 255, 1);
     }
     100% {
-      text-shadow: -2px 0 rgba(0, 255, 255, 1), 2px 0 rgba(255, 0, 255, 1);
+      text-shadow:
+        -2px 0 rgba(0, 255, 255, 1),
+        2px 0 rgba(255, 0, 255, 1);
     }
   }
 
