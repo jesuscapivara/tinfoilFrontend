@@ -6,8 +6,12 @@ import path from "path";
 import { defineConfig } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
-
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime()];
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+];
 
 export default defineConfig({
   plugins,
@@ -35,35 +39,20 @@ export default defineConfig({
       "localhost",
       "127.0.0.1",
     ],
-    proxy: {
-      // Proxy para evitar CORS em desenvolvimento
-      // Redireciona chamadas /api locais para o backend
-      '/api': {
-        target: process.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/indexing-status': {
-        target: process.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/health': {
-        target: process.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/refresh': {
-        target: process.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/bridge': {
-        target: process.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-      },
-    },
+    // Proxy desabilitado quando usando backend em produção
+    // Se quiser usar proxy local, descomente e ajuste o target
+    // proxy: {
+    //   '/api': {
+    //     target: 'https://tinfoilapp.discloud.app',
+    //     changeOrigin: true,
+    //     secure: true,
+    //   },
+    //   '/bridge': {
+    //     target: 'https://tinfoilapp.discloud.app',
+    //     changeOrigin: true,
+    //     secure: true,
+    //   },
+    // },
     fs: {
       strict: true,
       deny: ["**/.*"],

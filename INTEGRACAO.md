@@ -7,6 +7,7 @@ Este documento descreve como o frontend e backend se comunicam após a separaç�
 ### Backend (lojaTinfoil)
 
 Configure no `.env`:
+
 ```env
 FRONTEND_URL=https://capivara.rossetti.eng.br
 NODE_ENV=production
@@ -15,6 +16,7 @@ NODE_ENV=production
 ### Frontend
 
 Configure no `.env`:
+
 ```env
 # IMPORTANTE: Use a RAIZ do domínio, SEM /api no final!
 # O código adiciona os sufixos corretos (/api, /health, etc.)
@@ -22,6 +24,7 @@ VITE_BACKEND_API_URL=https://tinfoilapp.discloud.app
 ```
 
 **⚠️ ATENÇÃO**: Não coloque `/api` no final da URL! O código já adiciona os sufixos corretos:
+
 - `/api` → Para a loja Tinfoil
 - `/health` → Para status de saúde
 - `/indexing-status` → Para status de indexação
@@ -30,6 +33,7 @@ VITE_BACKEND_API_URL=https://tinfoilapp.discloud.app
 ## 🌐 CORS
 
 O backend está configurado para:
+
 - **Produção**: Aceita apenas `FRONTEND_URL` configurado
 - **Desenvolvimento**: Aceita qualquer porta em `localhost` ou `127.0.0.1`
 - **Domínios específicos**: `https://capivara.rossetti.eng.br`
@@ -51,6 +55,7 @@ Isso significa que em desenvolvimento, você pode fazer chamadas como `/api` e o
 ### Tinfoil Auth (Basic Auth)
 
 Usado para rotas `/api/*` (Tinfoil console):
+
 - Credenciais são armazenadas no `localStorage` como `tinfoil_auth` (base64)
 - Funções `setTinfoilAuth()` e `getTinfoilAuth()` gerenciam isso automaticamente
 - As credenciais são injetadas automaticamente nas requisições
@@ -58,20 +63,24 @@ Usado para rotas `/api/*` (Tinfoil console):
 ### JWT Auth (Bearer Token)
 
 Usado para rotas `/bridge/*` (Dashboard):
+
 - Token JWT armazenado em `localStorage` como `auth_token`
 - Enviado via header `Authorization: Bearer <token>`
 
 ## 📡 Rotas
 
 ### Rotas Públicas
+
 - `GET /health` - Status de saúde
 - `GET /indexing-status` - Status de indexação
 
 ### Rotas Tinfoil (Basic Auth)
+
 - `GET /api` - Lista de jogos (formato Tinfoil)
 - `GET /refresh` - Força indexação
 
 ### Rotas Bridge (JWT)
+
 - `GET /bridge/games` - Lista de jogos (formato rico para dashboard)
 - `GET /bridge/me` - Dados do usuário
 - `POST /bridge/auth` - Login
@@ -79,19 +88,46 @@ Usado para rotas `/bridge/*` (Dashboard):
 
 ## 🚀 Desenvolvimento
 
-1. Inicie o backend:
-```bash
-cd lojaTinfoil
-npm start
+### Opção 1: Frontend local conectando ao backend em produção (Recomendado)
+
+1. Configure o `.env` do frontend:
+
+```env
+VITE_BACKEND_API_URL=https://tinfoilapp.discloud.app
 ```
 
 2. Inicie o frontend:
+
 ```bash
 cd frontend
 pnpm dev
 ```
 
-O Vite rodará na porta 3000 e usará o proxy para chamadas ao backend.
+O frontend rodará na porta 3000 e se conectará diretamente ao backend em produção.
+
+### Opção 2: Frontend e backend locais
+
+1. Configure o `.env` do frontend:
+
+```env
+VITE_BACKEND_API_URL=http://localhost:8080
+```
+
+2. Inicie o backend:
+
+```bash
+cd lojaTinfoil
+node index.js
+```
+
+3. Inicie o frontend:
+
+```bash
+cd frontend
+pnpm dev
+```
+
+O Vite rodará na porta 3000 e usará o proxy para chamadas ao backend local.
 
 ## 🌐 Produção
 
@@ -106,6 +142,7 @@ O Vite rodará na porta 3000 e usará o proxy para chamadas ao backend.
 ### Discloud (Backend)
 
 Configure no `.env`:
+
 ```env
 FRONTEND_URL=https://tinfoil-frontend.vercel.app
 NODE_ENV=production
@@ -119,4 +156,3 @@ O CORS já está configurado para aceitar requisições da Vercel.
 - **Rota `/bridge/games`**: Formato rico com metadados para dashboard humano
 - **Autenticação**: Centralizada no `api.ts` via localStorage
 - **CORS**: Flexível em dev, estrito em produção
-
