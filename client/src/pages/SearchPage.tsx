@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { searchGames, downloadFromSearch, SearchGame } from "@/lib/api";
@@ -19,27 +19,18 @@ import {
 export default function SearchPage() {
   const { user, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState(""); // Termo de busca ativo (só atualiza ao clicar em buscar)
   const queryClient = useQueryClient();
 
-  // Debounce do termo de busca
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  // Busca jogos
+  // Busca jogos - só executa quando searchQuery é definido (após clicar em buscar)
   const {
     data: games = [],
     isLoading: isSearching,
     error: searchError,
   } = useQuery({
-    queryKey: ["search-games", debouncedSearchTerm],
-    queryFn: () => searchGames(debouncedSearchTerm),
-    enabled: debouncedSearchTerm.trim().length > 0,
+    queryKey: ["search-games", searchQuery],
+    queryFn: () => searchGames(searchQuery),
+    enabled: searchQuery.trim().length > 0,
     retry: 1,
   });
 
@@ -51,7 +42,13 @@ export default function SearchPage() {
     }: {
       command: string;
       gameName: string;
-    }) => downloadFromSearch(command, gameName),
+    }) => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        throw new Error("Token de autenticação não encontrado");
+      }
+      return downloadFromSearch(command, gameName, token);
+    },
     onSuccess: data => {
       if (data.queued) {
         toast.success(
@@ -71,7 +68,8 @@ export default function SearchPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim().length > 0) {
-      setDebouncedSearchTerm(searchTerm.trim());
+      // Só atualiza searchQuery quando o usuário clica em buscar
+      setSearchQuery(searchTerm.trim());
     }
   };
 
@@ -133,7 +131,7 @@ export default function SearchPage() {
             <Button
               type="submit"
               disabled={isSearching || searchTerm.trim().length === 0}
-              className="border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              className="cyber-btn border-2 border-primary bg-primary text-white hover:bg-primary/90 hover:text-white font-bold px-6"
             >
               {isSearching ? (
                 <>
@@ -165,7 +163,7 @@ export default function SearchPage() {
           </Card>
         )}
 
-        {isSearching && debouncedSearchTerm && (
+        {isSearching && searchQuery && (
           <Card className="cyber-card text-center py-16">
             <Loader2 className="w-16 h-16 text-primary mx-auto mb-4 animate-spin" />
             <p className="text-primary font-bold text-lg">Buscando jogos...</p>
@@ -235,29 +233,27 @@ export default function SearchPage() {
           </div>
         )}
 
-        {!isSearching &&
-          !searchError &&
-          debouncedSearchTerm &&
-          games.length === 0 && (
-            <Card className="cyber-card text-center py-16">
-              <Search className="w-16 h-16 text-secondary mx-auto mb-4 opacity-40" />
-              <p className="text-secondary font-bold text-lg">
-                Nenhum jogo encontrado
-              </p>
-              <p className="text-muted-foreground text-sm mt-2">
-                Tente buscar com outros termos
-              </p>
-            </Card>
-          )}
+        {!isSearching && !searchError && searchQuery && games.length === 0 && (
+          <Card className="cyber-card text-center py-16">
+            <Search className="w-16 h-16 text-secondary mx-auto mb-4 opacity-40" />
+            <p className="text-secondary font-bold text-lg">
+              Nenhum jogo encontrado
+            </p>
+            <p className="text-muted-foreground text-sm mt-2">
+              Tente buscar com outros termos
+            </p>
+          </Card>
+        )}
 
-        {!debouncedSearchTerm && (
+        {!searchQuery && (
           <Card className="cyber-card text-center py-16">
             <Search className="w-16 h-16 text-secondary mx-auto mb-4 opacity-40" />
             <p className="text-secondary font-bold text-lg">
               Digite um termo de busca
             </p>
             <p className="text-muted-foreground text-sm mt-2">
-              Use a barra de busca acima para encontrar jogos
+              Use a barra de busca acima e clique em "Buscar" para encontrar
+              jogos
             </p>
           </Card>
         )}

@@ -57,14 +57,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await getBackendUserData(token);
 
       // Mapeia os dados do backend para o formato esperado
-      setUser({
+      const newUser = {
         id: userData.isAdmin ? "admin" : userData.email,
         email: userData.email,
         role: userData.isAdmin ? "admin" : "user",
         isAdmin: userData.isAdmin,
         isApproved: userData.isApproved,
         tinfoilUser: userData.tinfoilUser,
-      });
+      };
+
+      // 🛠️ CORREÇÃO DA RACE CONDITION:
+      // Atualiza o estado de forma síncrona e aguarda o React propagar
+      setUser(newUser);
+
+      // Força um "tick" no event loop para garantir que o React
+      // processou a atualização de estado antes de continuar
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      console.log("[AuthContext] Estado do usuário atualizado:", newUser.email);
     } catch (err) {
       console.error("[AuthContext] Erro ao buscar dados do usuário:", err);
       // Se o erro for 401, remove o token inválido
@@ -92,22 +102,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Listener para detectar quando o token é salvo
   useEffect(() => {
-    const handleAuthUpdate = () => {
+    const handleAuthUpdate = async () => {
       console.log(
         "[AuthContext] Evento de auth detectado, forçando refresh..."
       );
-      fetchUser();
+      // Força atualização imediata do estado
+      await fetchUser();
+      console.log("[AuthContext] Estado atualizado após evento");
     };
 
     // Escuta evento customizado disparado pelo Login
     window.addEventListener("auth-token-updated", handleAuthUpdate);
 
     // Também escuta mudanças no localStorage (para outras abas)
-    const handleStorageChange = () => {
+    const handleStorageChange = async () => {
       console.log(
         "[AuthContext] Storage change detectado, forçando refresh..."
       );
-      fetchUser();
+      await fetchUser();
     };
     window.addEventListener("storage", handleStorageChange);
 

@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { LogOut, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getBackendHealth } from "@/lib/api";
 
@@ -22,12 +22,14 @@ export function Navigation() {
 
   const isBackendOnline = healthStatus?.status === "Online";
 
-  // Não renderiza se ainda estiver carregando
+  // 🛠️ CORREÇÃO DA RACE CONDITION:
+  // Renderiza apenas quando o estado de autenticação estiver completamente carregado
+  // e o usuário estiver disponível. Isso garante que o menu apareça imediatamente
+  // após o login, sem precisar de refresh manual.
   if (authLoading) {
     return null;
   }
 
-  // Se não estiver autenticado após o carregamento, não renderiza
   if (!user) {
     return null;
   }

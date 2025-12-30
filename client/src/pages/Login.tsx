@@ -85,10 +85,10 @@ export default function Login() {
         localStorage.setItem("auth_token", data.token);
         console.log("[LOGIN] Token salvo no localStorage");
 
-        // Dispara evento customizado ANTES do refresh para notificar outros componentes
+        // Dispara evento customizado para notificar o AuthContext
         window.dispatchEvent(new Event("auth-token-updated"));
 
-        // Atualiza o estado de autenticação imediatamente
+        // Atualiza o estado de autenticação e AGUARDA a conclusão
         try {
           await refresh();
           console.log("[LOGIN] Estado de autenticação atualizado");
@@ -97,12 +97,11 @@ export default function Login() {
           // Continua mesmo se o refresh falhar, pois o token está salvo
         }
 
-        // Aguarda um pouco mais para garantir que todos os componentes sejam atualizados
-        // Aumentado para 500ms para dar tempo do Navigation detectar e atualizar
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Dispara evento novamente após o delay para garantir que todos ouviram
-        window.dispatchEvent(new Event("auth-token-updated"));
+        // 🛠️ CORREÇÃO DA RACE CONDITION:
+        // Aguarda um "tick" no event loop para garantir que o React
+        // propagou o estado do AuthContext para todos os componentes
+        // (Navigation, Dashboard, etc.) antes de redirecionar
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Redireciona para o dashboard
         if (data.redirect) {
