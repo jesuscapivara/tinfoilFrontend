@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Upload,
   X,
@@ -266,10 +267,17 @@ export default function DownloadsPage() {
                   return true;
                 })
                 .map((download: any) => {
+                  // Detecta as fases
+                  const isUploading = download.phase === "uploading";
+                  const isIndexing = download.phase === "indexing"; // Nova fase
+                  const isDone = download.phase === "done"; // Fase final
+                  const isSuccessState = isIndexing || isDone; // Agrupador
+
                   // Determina se deve mostrar estatísticas ou mensagens de status
                   const showStats =
                     download.phase === "downloading" ||
-                    download.phase === "uploading";
+                    download.phase === "uploading" ||
+                    isSuccessState; // Mostra stats mesmo no sucesso
                   const isChecking = download.phase === "checking";
                   const isConnecting = download.phase === "connecting";
                   const isError = download.phase === "error";
@@ -277,24 +285,85 @@ export default function DownloadsPage() {
                     isError && download.error?.includes("Duplicado");
 
                   return (
-                    <Card key={download.id} className="cyber-card">
-                      <div className="space-y-4">
+                    <Card
+                      key={download.id}
+                      className={`cyber-card relative overflow-hidden transition-all duration-500 ${
+                        isSuccessState ? "border-green-500/50" : ""
+                      }`}
+                    >
+                      {/* Background Animation sutil */}
+                      {download.phase === "uploading" && (
+                        <div className="absolute inset-0 bg-purple-500/5 pointer-events-none" />
+                      )}
+                      {isSuccessState && (
+                        <div className="absolute inset-0 bg-green-500/5 pointer-events-none" />
+                      )}
+                      <div className="space-y-4 relative z-10">
                         <div className="flex justify-between items-start gap-4">
                           <div className="flex-1">
                             <h3 className="text-lg font-bold text-foreground">
                               {download.name}
                             </h3>
-                            <p className="text-xs text-secondary mt-2 font-mono">
-                              {isChecking && "🔍 CHECANDO DUPLICIDADE..."}
-                              {isConnecting && "📡 CONECTANDO AOS PARES..."}
-                              {download.phase === "downloading" &&
-                                "⬇ DOWNLOADING"}
-                              {download.phase === "uploading" && "⬆ UPLOADING"}
-                              {download.phase === "queued" && "⏳ QUEUED"}
-                              {download.phase === "paused" && "⏸ PAUSED"}
-                              {isError && !isDuplicate && "❌ ERRO"}
-                              {isDuplicate && "⚠️ DUPLICATA DETECTADA"}
-                            </p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge
+                                variant="outline"
+                                className={`font-mono text-xs uppercase tracking-wider ${
+                                  isSuccessState
+                                    ? "border-green-500 text-green-400"
+                                    : download.phase === "uploading"
+                                      ? "border-purple-500 text-purple-400"
+                                      : "border-primary text-primary"
+                                }`}
+                              >
+                                {isSuccessState ? (
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                ) : download.phase === "uploading" ? (
+                                  <ArrowUpCircle className="w-3 h-3 mr-1" />
+                                ) : (
+                                  <ArrowDownCircle className="w-3 h-3 mr-1" />
+                                )}
+                                <span className="ml-1">
+                                  {download.phase === "queued"
+                                    ? "⏳ NA FILA"
+                                    : isIndexing
+                                      ? "📚 INDEXANDO"
+                                      : isDone
+                                        ? "✅ CONCLUÍDO"
+                                        : download.phase === "uploading"
+                                          ? "⬆ SMART STREAM"
+                                          : download.phase === "downloading"
+                                            ? "⬇ TORRENT DOWNLOAD"
+                                            : isChecking
+                                              ? "🔍 CHECANDO DUPLICIDADE..."
+                                              : isConnecting
+                                                ? "📡 CONECTANDO AOS PARES..."
+                                                : isError && !isDuplicate
+                                                  ? "❌ ERRO"
+                                                  : isDuplicate
+                                                    ? "⚠️ DUPLICATA DETECTADA"
+                                                    : "⏳ QUEUED"}
+                                </span>
+                              </Badge>
+                              {(isIndexing || isDone) && (
+                                <span
+                                  className={`text-xs font-mono truncate max-w-[300px] ${
+                                    isSuccessState
+                                      ? "text-green-400 font-bold"
+                                      : "text-secondary"
+                                  }`}
+                                  title={
+                                    isIndexing
+                                      ? "Catalogando jogo na biblioteca..."
+                                      : "Pronto para jogar!"
+                                  }
+                                >
+                                  ▸{" "}
+                                  {isIndexing
+                                    ? "Catalogando jogo na biblioteca..."
+                                    : "Pronto para jogar!"}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           {showStats && (
                             <div className="text-right">
@@ -504,18 +573,33 @@ export default function DownloadsPage() {
                             </div>
                           )}
 
-                        {/* Controls - Só mostra se não for duplicata */}
+                        {/* Controls - Botão condicional baseado no estado */}
                         {!isDuplicate && (
                           <div className="flex gap-2 pt-2">
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="flex-1 text-xs border-2 border-destructive"
-                              onClick={() => handleCancel(download.id)}
-                              disabled={cancelMutation.isPending}
-                            >
-                              <X className="w-4 h-4 mr-2" /> CANCEL
-                            </Button>
+                            {isSuccessState ? (
+                              // ✅ Botão de Sucesso (Não clicável ou link para biblioteca)
+                              <Button
+                                size="sm"
+                                className="w-full text-xs h-8 bg-green-500/20 text-green-400 border border-green-500/50 hover:bg-green-500/30 cursor-default"
+                                disabled
+                              >
+                                <CheckCircle2 className="w-3 h-3 mr-2" />
+                                {isIndexing
+                                  ? "ADICIONANDO À LOJA..."
+                                  : "DISPONÍVEL NA LOJA"}
+                              </Button>
+                            ) : (
+                              // ❌ Botão de Cancelar (Apenas se NÃO for sucesso)
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="flex-1 text-xs border-2 border-destructive"
+                                onClick={() => handleCancel(download.id)}
+                                disabled={cancelMutation.isPending}
+                              >
+                                <X className="w-4 h-4 mr-2" /> CANCELAR OPERAÇÃO
+                              </Button>
+                            )}
                           </div>
                         )}
                       </div>
