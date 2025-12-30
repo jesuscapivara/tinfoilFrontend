@@ -318,7 +318,9 @@ export async function regenerateCredentials(
     throw new Error(errorData.error || "Erro ao regenerar credenciais");
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log("[API] Resposta da regeneração:", data);
+  return data;
 }
 
 /**

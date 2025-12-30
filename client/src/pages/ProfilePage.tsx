@@ -41,13 +41,25 @@ export default function ProfilePage() {
       }
 
       const result = await regenerateCredentials(token);
-      setNewPassword(result.newPass);
-      toast.success("Credenciais regeneradas com sucesso!", {
-        description: "Copie a nova senha antes de fechar esta página",
-      });
+      console.log("[PROFILE] Resultado da regeneração:", result);
 
-      // Atualiza os dados do usuário
-      await refresh();
+      if (result && result.newPass) {
+        // Define a senha primeiro para garantir que seja exibida
+        setNewPassword(result.newPass);
+        console.log("[PROFILE] Nova senha definida no estado:", result.newPass);
+
+        toast.success("Credenciais regeneradas com sucesso!", {
+          description: "Copie a nova senha antes de fechar esta página",
+        });
+
+        // Atualiza os dados do usuário após um pequeno delay para garantir que o estado seja renderizado
+        setTimeout(async () => {
+          await refresh();
+        }, 100);
+      } else {
+        console.error("[PROFILE] Resposta inválida:", result);
+        toast.error("Resposta inválida do servidor");
+      }
     } catch (error) {
       console.error("[PROFILE] Erro ao regenerar credenciais:", error);
       toast.error(
@@ -229,38 +241,37 @@ export default function ProfilePage() {
                 </div>
 
                 {newPassword && (
-                  <Alert className="border-green-500 bg-green-500/10">
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <AlertDescription className="text-green-500 font-bold">
-                      Nova senha gerada! Copie antes de fechar.
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {newPassword && (
-                  <div className="border-2 border-primary/50 bg-input p-4 rounded-lg">
-                    <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
-                      Nova Tinfoil Password
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-2xl font-mono text-primary font-bold flex-1">
-                        {newPassword}
+                  <>
+                    <Alert className="border-green-500 bg-green-500/10">
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      <AlertDescription className="text-green-500 font-bold">
+                        Nova senha gerada! Copie antes de fechar.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="border-2 border-primary/50 bg-input p-4 rounded-lg">
+                      <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
+                        Nova Tinfoil Password
                       </p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => copyToClipboard(newPassword)}
-                        className="border-primary/60 hover:border-primary"
-                      >
-                        <Copy className="w-4 h-4 mr-2" />
-                        Copiar
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <p className="text-2xl font-mono text-primary font-bold flex-1">
+                          {newPassword}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyToClipboard(newPassword)}
+                          className="border-primary/60 hover:border-primary"
+                        >
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copiar
+                        </Button>
+                      </div>
+                      <p className="text-xs text-secondary mt-2 font-mono">
+                        ⚠️ Esta senha será exibida apenas uma vez. Salve-a em um
+                        local seguro.
+                      </p>
                     </div>
-                    <p className="text-xs text-secondary mt-2 font-mono">
-                      ⚠️ Esta senha será exibida apenas uma vez. Salve-a em um
-                      local seguro.
-                    </p>
-                  </div>
+                  </>
                 )}
 
                 {user.isApproved && user.role !== "admin" && (
