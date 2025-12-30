@@ -162,38 +162,57 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Admin Section */}
+        {/* Admin Refresh Button - Destaque */}
         {user.role === "admin" && (
-          <div className="space-y-8">
-            <div className="cyber-divider" />
-
+          <Card className="cyber-card mb-12 border-2 border-primary/50">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-primary uppercase tracking-widest flex items-center gap-3">
-                <span className="text-secondary">▸</span>
-                Admin Controls
-                <span className="text-secondary">◂</span>
-              </h2>
+              <div>
+                <h3 className="text-xl font-bold text-primary uppercase tracking-wider mb-2">
+                  Game Index Management
+                </h3>
+                <p className="text-secondary text-sm">
+                  {indexingStatus?.isIndexing
+                    ? `Indexando... ${indexingStatus.progress || ""}`
+                    : indexingStatus?.totalGames
+                      ? `${indexingStatus.totalGames} jogos indexados`
+                      : "Nenhum jogo indexado"}
+                </p>
+              </div>
               <Button
                 onClick={() => refreshIndexMutation.mutate()}
                 disabled={
                   refreshIndexMutation.isPending || indexingStatus?.isIndexing
                 }
-                className="cyber-btn"
+                className="cyber-btn text-lg px-8 py-6"
+                size="lg"
               >
                 {refreshIndexMutation.isPending ||
                 indexingStatus?.isIndexing ? (
                   <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
                     INDEXANDO...
                   </>
                 ) : (
                   <>
-                    <RefreshCw className="w-4 h-4 mr-2" />
+                    <RefreshCw className="w-5 h-5 mr-3" />
                     REFRESH INDEX
                   </>
                 )}
               </Button>
             </div>
+          </Card>
+        )}
+
+        {/* Admin Section */}
+        {user.role === "admin" && (
+          <div className="space-y-8">
+            <div className="cyber-divider" />
+
+            <h2 className="text-2xl font-bold text-primary uppercase tracking-widest flex items-center gap-3">
+              <span className="text-secondary">▸</span>
+              Admin Controls
+              <span className="text-secondary">◂</span>
+            </h2>
 
             {/* Pending Users */}
             <Card className="cyber-card">
