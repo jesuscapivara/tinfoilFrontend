@@ -371,6 +371,23 @@ export async function downloadFromSearch(
     body: JSON.stringify({ command, gameName }),
   });
 
+  // Verifica se é erro de duplicata (409 Conflict)
+  if (response.status === 409) {
+    const errorData = await response.json();
+    throw new Error(
+      errorData.error || "Este jogo já está na fila ou sendo baixado"
+    );
+  }
+
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ error: "Erro desconhecido" }));
+    throw new Error(
+      errorData.error || `Erro ${response.status}: ${response.statusText}`
+    );
+  }
+
   const data: DownloadFromSearchResponse = await response.json();
   if (!data.success) {
     throw new Error(data.message || "Erro ao iniciar download");
