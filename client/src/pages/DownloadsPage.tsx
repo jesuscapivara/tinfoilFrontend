@@ -1,4 +1,4 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -23,22 +23,7 @@ export default function DownloadsPage() {
   const [fileInput, setFileInput] = useState<File | null>(null);
   const queryClient = useQueryClient();
 
-  // Busca downloads ativos
-  const {
-    data: downloads = { active: [], queue: [] },
-    isLoading: downloadsLoading,
-  } = useQuery({
-    queryKey: ["active-downloads"],
-    queryFn: async () => {
-      const token = localStorage.getItem("auth_token");
-      if (!token) throw new Error("Token não encontrado");
-      return getActiveDownloads(token);
-    },
-    enabled: !!user,
-    refetchInterval: 3000, // Atualiza a cada 3 segundos
-  });
-
-  // Mutation para upload
+  // Mutation para upload (definida primeiro para garantir disponibilidade)
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       const token = localStorage.getItem("auth_token");
@@ -83,6 +68,21 @@ export default function DownloadsPage() {
     onError: (error: Error) => {
       toast.error(`Erro ao cancelar download: ${error.message}`);
     },
+  });
+
+  // Busca downloads ativos
+  const {
+    data: downloads = { active: [], queue: [] },
+    isLoading: downloadsLoading,
+  } = useQuery({
+    queryKey: ["active-downloads"],
+    queryFn: async () => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) throw new Error("Token não encontrado");
+      return getActiveDownloads(token);
+    },
+    enabled: !!user,
+    refetchInterval: 3000, // Atualiza a cada 3 segundos
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

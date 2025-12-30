@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock, Mail, AlertCircle } from "lucide-react";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 
 const BACKEND_URL =
   import.meta.env.VITE_BACKEND_API_URL || "http://localhost:8080";
@@ -85,9 +85,24 @@ export default function Login() {
         localStorage.setItem("auth_token", data.token);
         console.log("[LOGIN] Token salvo no localStorage");
 
+        // Dispara evento customizado ANTES do refresh para notificar outros componentes
+        window.dispatchEvent(new Event("auth-token-updated"));
+
         // Atualiza o estado de autenticação imediatamente
-        await refresh();
-        console.log("[LOGIN] Estado de autenticação atualizado");
+        try {
+          await refresh();
+          console.log("[LOGIN] Estado de autenticação atualizado");
+        } catch (refreshError) {
+          console.error("[LOGIN] Erro ao atualizar estado:", refreshError);
+          // Continua mesmo se o refresh falhar, pois o token está salvo
+        }
+
+        // Aguarda um pouco mais para garantir que todos os componentes sejam atualizados
+        // Aumentado para 500ms para dar tempo do Navigation detectar e atualizar
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Dispara evento novamente após o delay para garantir que todos ouviram
+        window.dispatchEvent(new Event("auth-token-updated"));
 
         // Redireciona para o dashboard
         if (data.redirect) {

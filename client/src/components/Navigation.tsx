@@ -1,4 +1,4 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { LogOut, Menu, X } from "lucide-react";
@@ -7,14 +7,14 @@ import { useQuery } from "@tanstack/react-query";
 import { getBackendHealth } from "@/lib/api";
 
 export function Navigation() {
-  const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Verifica status do backend
   const { data: healthStatus, isLoading: healthLoading } = useQuery({
     queryKey: ["backend-health"],
     queryFn: getBackendHealth,
-    enabled: isAuthenticated && !authLoading,
+    enabled: !!user && !authLoading,
     refetchInterval: 10000, // Verifica a cada 10 segundos
     retry: 1,
     retryDelay: 2000,
@@ -22,8 +22,13 @@ export function Navigation() {
 
   const isBackendOnline = healthStatus?.status === "Online";
 
-  // Não renderiza se ainda estiver carregando ou se não estiver autenticado
-  if (authLoading || !isAuthenticated) {
+  // Não renderiza se ainda estiver carregando
+  if (authLoading) {
+    return null;
+  }
+
+  // Se não estiver autenticado após o carregamento, não renderiza
+  if (!user) {
     return null;
   }
 

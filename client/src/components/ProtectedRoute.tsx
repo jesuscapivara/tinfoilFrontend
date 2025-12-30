@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { getLoginUrl } from "@/const";
 
 interface ProtectedRouteProps {
@@ -9,10 +9,10 @@ interface ProtectedRouteProps {
   requireApproved?: boolean;
 }
 
-export function ProtectedRoute({ 
-  children, 
+export function ProtectedRoute({
+  children,
   requireAdmin = false,
-  requireApproved = false 
+  requireApproved = false,
 }: ProtectedRouteProps) {
   const { user, loading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
@@ -37,7 +37,14 @@ export function ProtectedRoute({
       setLocation("/dashboard");
       return;
     }
-  }, [loading, isAuthenticated, user, requireAdmin, requireApproved, setLocation]);
+  }, [
+    loading,
+    isAuthenticated,
+    user,
+    requireAdmin,
+    requireApproved,
+    setLocation,
+  ]);
 
   // Mostra loading enquanto verifica autenticação
   if (loading) {
@@ -66,4 +73,3 @@ export function ProtectedRoute({
 
   return <>{children}</>;
 }
-
