@@ -22,11 +22,3 @@ temp
 *.db
 *.sqlite
 *.sqlite3
-
-# Arquivos TypeScript fonte (não devem ser servidos como estáticos)
-# MAS api/server.ts DEVE ser incluído (é compilado pelo Vercel)
-server/**/*.ts
-shared/**/*.ts
-client/src/**/*.ts
-!api/server.ts
-

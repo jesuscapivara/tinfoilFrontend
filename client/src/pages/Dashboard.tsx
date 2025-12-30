@@ -1,14 +1,16 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { trpc } from "@/lib/trpc";
+import { useQuery } from "@tanstack/react-query";
 import { Download, Users, Zap, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { getBackendIndexingStatus } from "@/lib/api";
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
-  const { data: stats } = trpc.downloads.getStats.useQuery();
-  const { data: pendingUsers } = trpc.auth.getPendingUsers.useQuery(undefined, {
-    enabled: user?.role === "admin",
+  const { data: indexingStatus } = useQuery({
+    queryKey: ["indexing-status"],
+    queryFn: getBackendIndexingStatus,
+    refetchInterval: 5000,
   });
 
   if (authLoading) {

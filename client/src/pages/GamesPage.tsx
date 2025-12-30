@@ -1,11 +1,18 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Card } from "@/components/ui/card";
-import { trpc } from "@/lib/trpc";
+import { useQuery } from "@tanstack/react-query";
 import { Database, Copy, CheckCircle2 } from "lucide-react";
+import { getBackendGames } from "@/lib/api";
 
 export default function GamesPage() {
   const { user } = useAuth();
-  const { data: games } = trpc.torrents.getIndexedGames.useQuery();
+  const { data: gamesData } = useQuery({
+    queryKey: ["games"],
+    queryFn: () => getBackendGames(user?.tinfoilUser, undefined), // TODO: Obter senha do usuário
+    enabled: !!user?.tinfoilUser,
+  });
+  
+  const games = gamesData?.files || [];
 
   if (user?.role !== "admin") {
     return (
@@ -64,12 +71,6 @@ export default function GamesPage() {
                     </div>
                   </div>
 
-                  <div className="border-t border-primary/30 pt-4">
-                    <p className="text-xs text-secondary font-bold mb-2">Indexed</p>
-                    <p className="text-xs text-foreground font-mono">
-                      {new Date(game.indexedAt).toLocaleDateString("pt-BR")}
-                    </p>
-                  </div>
 
                   <button
                     onClick={() => {

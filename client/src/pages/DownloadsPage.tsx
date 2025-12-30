@@ -1,21 +1,13 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { trpc } from "@/lib/trpc";
 import { Upload, Play, Pause, X, CheckCircle2, AlertCircle } from "lucide-react";
 import { useState } from "react";
 
 export default function DownloadsPage() {
   const { user } = useAuth();
   const [fileInput, setFileInput] = useState<File | null>(null);
-  
-  const { data: downloads, refetch } = trpc.torrents.getActiveDownloads.useQuery();
-  const uploadMutation = trpc.torrents.uploadTorrent.useMutation({
-    onSuccess: () => {
-      setFileInput(null);
-      refetch();
-    },
-  });
+  const [downloads, setDownloads] = useState<any[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -28,16 +20,10 @@ export default function DownloadsPage() {
 
   const handleUpload = async () => {
     if (!fileInput) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      uploadMutation.mutate({
-        fileName: fileInput.name,
-        fileData: content.split(",")[1] || content,
-      });
-    };
-    reader.readAsDataURL(fileInput);
+    
+    // TODO: Implementar upload via backend
+    alert("Upload functionality will be implemented via backend API");
+    setFileInput(null);
   };
 
   if (user?.role !== "admin") {

@@ -1,18 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "pnpm build:vercel",
+  "buildCommand": "pnpm build",
   "installCommand": "pnpm install",
-  "framework": null,
-  "outputDirectory": "dist/public",
+  "framework": "vite",
+  "outputDirectory": "dist",
   "rewrites": [
-    {
-      "source": "/api/trpc/(.*)",
-      "destination": "/api/server"
-    },
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/server"
-    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

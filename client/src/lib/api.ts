@@ -1,11 +1,8 @@
 /**
- * Serviço para comunicação com o backend lojaTinfoil
- * Este serviço faz chamadas HTTP para o backend Express separado
+ * Cliente HTTP para comunicação com o backend lojaTinfoil
  */
 
-import { ENV } from "../_core/env";
-
-const BACKEND_URL = ENV.backendApiUrl;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_API_URL || "http://localhost:8080";
 
 export interface BackendGame {
   url: string;
@@ -51,7 +48,7 @@ export interface BackendHealth {
 }
 
 /**
- * Faz uma requisição autenticada ao backend
+ * Faz uma requisição ao backend
  */
 async function fetchBackend(
   endpoint: string,
@@ -65,6 +62,7 @@ async function fetchBackend(
       "Content-Type": "application/json",
       ...options.headers,
     },
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -76,7 +74,6 @@ async function fetchBackend(
 
 /**
  * Obtém a lista de jogos do backend
- * Requer autenticação Tinfoil
  */
 export async function getBackendGames(
   tinfoilUser?: string,
@@ -84,9 +81,8 @@ export async function getBackendGames(
 ): Promise<BackendApiResponse> {
   const headers: HeadersInit = {};
   
-  // Adiciona autenticação Basic Auth se fornecida
   if (tinfoilUser && tinfoilPass) {
-    const credentials = Buffer.from(`${tinfoilUser}:${tinfoilPass}`).toString("base64");
+    const credentials = btoa(`${tinfoilUser}:${tinfoilPass}`);
     headers.Authorization = `Basic ${credentials}`;
   }
 
@@ -122,7 +118,6 @@ export async function getBackendHealth(): Promise<BackendHealth> {
 
 /**
  * Força uma nova indexação no backend
- * Requer autenticação
  */
 export async function refreshBackendIndex(
   tinfoilUser?: string,
@@ -131,7 +126,7 @@ export async function refreshBackendIndex(
   const headers: HeadersInit = {};
   
   if (tinfoilUser && tinfoilPass) {
-    const credentials = Buffer.from(`${tinfoilUser}:${tinfoilPass}`).toString("base64");
+    const credentials = btoa(`${tinfoilUser}:${tinfoilPass}`);
     headers.Authorization = `Basic ${credentials}`;
   }
 
@@ -141,56 +136,5 @@ export async function refreshBackendIndex(
   });
 
   return response.text();
-}
-
-/**
- * Obtém dados do usuário do backend (via bridge)
- * Requer autenticação JWT do frontend
- */
-export async function getBackendUserData(
-  frontendJwt: string
-): Promise<{
-  email: string;
-  isAdmin: boolean;
-  isApproved: boolean;
-  tinfoilUser: string;
-  tinfoilPass: string | null;
-  host: string;
-  protocol: string;
-}> {
-  const response = await fetchBackend("/bridge/me", {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${frontendJwt}`,
-    },
-  });
-
-  return response.json();
-}
-
-/**
- * Obtém jogos via bridge (para dashboard)
- * Requer autenticação JWT do frontend
- */
-export async function getBackendGamesViaBridge(
-  frontendJwt: string
-): Promise<{
-  games: BackendGame[];
-  stats: {
-    base: number;
-    dlc: number;
-    update: number;
-    unknown: number;
-    total: number;
-  };
-}> {
-  const response = await fetchBackend("/bridge/games", {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${frontendJwt}`,
-    },
-  });
-
-  return response.json();
 }
 
