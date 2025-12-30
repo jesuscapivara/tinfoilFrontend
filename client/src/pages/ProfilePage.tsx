@@ -16,7 +16,7 @@ import { regenerateCredentials } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function ProfilePage() {
-  const { user, loading: authLoading, refresh } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [regenerating, setRegenerating] = useState(false);
   const [newPassword, setNewPassword] = useState<string | null>(null);
 
@@ -52,10 +52,8 @@ export default function ProfilePage() {
           description: "Copie a nova senha antes de fechar esta página",
         });
 
-        // Atualiza os dados do usuário após um pequeno delay para garantir que o estado seja renderizado
-        setTimeout(async () => {
-          await refresh();
-        }, 100);
+        // Não atualiza os dados do usuário imediatamente para evitar re-renderização
+        // A senha não aparece no objeto user mesmo, então não é necessário atualizar
       } else {
         console.error("[PROFILE] Resposta inválida:", result);
         toast.error("Resposta inválida do servidor");
