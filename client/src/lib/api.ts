@@ -84,9 +84,13 @@ async function fetchBackend(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  // Remove barra duplicada se existir
+  // Garante que o endpoint comece com /
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  const url = `${BACKEND_URL}${cleanEndpoint}`;
+  
+  // Remove barra final da URL base se houver, para evitar //
+  const cleanBase = BACKEND_URL.endsWith("/") ? BACKEND_URL.slice(0, -1) : BACKEND_URL;
+  
+  const url = `${cleanBase}${cleanEndpoint}`;
   
   // INJEÇÃO AUTOMÁTICA DE AUTH
   // Se tiver as credenciais no localStorage, injeta aqui para não sujar os componentes
