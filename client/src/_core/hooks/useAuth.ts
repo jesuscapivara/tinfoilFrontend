@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getLoginUrl } from "@/const";
+import { getBackendUserData } from "@/lib/api";
 
 type User = {
   id: string;
@@ -34,18 +35,32 @@ export function useAuth(options?: UseAuthOptions) {
       setError(null);
       
       // Tenta obter dados do usuário do backend
-      // Por enquanto, vamos verificar se há um token no localStorage
       const token = localStorage.getItem("auth_token");
       
       if (!token) {
         setUser(null);
+        setLoading(false);
         return;
       }
 
-      // TODO: Fazer chamada ao backend para obter dados do usuário
-      // Por enquanto, retorna null
-      setUser(null);
+      // Faz chamada ao backend para obter dados do usuário
+      const userData = await getBackendUserData(token);
+      
+      // Mapeia os dados do backend para o formato esperado
+      setUser({
+        id: userData.isAdmin ? "admin" : userData.email,
+        email: userData.email,
+        role: userData.isAdmin ? "admin" : "user",
+        isAdmin: userData.isAdmin,
+        isApproved: userData.isApproved,
+        tinfoilUser: userData.tinfoilUser,
+      });
     } catch (err) {
+      console.error("[useAuth] Erro ao buscar dados do usuário:", err);
+      // Se o erro for 401, remove o token inválido
+      if (err instanceof Error && err.message.includes("401")) {
+        localStorage.removeItem("auth_token");
+      }
       setError(err instanceof Error ? err : new Error("Failed to fetch user"));
       setUser(null);
     } finally {
