@@ -1,0 +1,32 @@
+# Arquivos que não devem ser enviados para o Vercel
+node_modules
+.pnpm-store
+.env
+.env.local
+.env.*.local
+dist
+build
+*.log
+.vscode
+.idea
+.DS_Store
+coverage
+.nyc_output
+*.tsbuildinfo
+.cache
+.parcel-cache
+.next
+.nuxt
+tmp
+temp
+*.db
+*.sqlite
+*.sqlite3
+
+# Arquivos TypeScript fonte (não devem ser servidos)
+server/**/*.ts
+shared/**/*.ts
+client/src/**/*.ts
+*.ts
+!api/**/*.js
+

@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "buildCommand": "pnpm build:vercel",
+  "installCommand": "pnpm install",
+  "framework": null,
+  "outputDirectory": "dist/public",
+  "rewrites": [
+    {
+      "source": "/api/trpc/(.*)",
+      "destination": "/api/server"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/server"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "functions": {
+    "api/server.ts": {
+      "runtime": "nodejs20.x"
+    }
+  }
+}
+
