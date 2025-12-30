@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -24,6 +24,93 @@ import {
   Server,
 } from "lucide-react";
 
+// Função para identificar tipo de jogo
+function getGameType(
+  titleId: string | null | undefined
+): "BASE" | "UPDATE" | "DLC" | "UNKNOWN" {
+  if (!titleId || titleId.length !== 16) return "UNKNOWN";
+  const suffix = titleId.slice(-3).toUpperCase();
+  if (suffix === "800") return "UPDATE";
+  if (suffix === "000") return "BASE";
+  return "DLC";
+}
+
+// Função para extrair Title ID do nome do jogo (formato: "Nome [0100123456789000]")
+// Ou usa o titleId retornado pelo backend se disponível
+function extractTitleId(game: SearchGame): string | null {
+  // Primeiro tenta usar o titleId retornado pelo backend
+  if (game.titleId) {
+    return game.titleId.toUpperCase();
+  }
+
+  // Fallback: tenta extrair do nome (caso tenha no formato [0100...])
+  const match = game.name.match(/\[([0-9A-Fa-f]{16})\]/);
+  return match ? match[1].toUpperCase() : null;
+}
+
+// Função para obter URL da imagem do jogo (mesma lógica da GamesPage)
+function getGameImageUrl(game: SearchGame, allGames: SearchGame[]): string {
+  const titleId = extractTitleId(game);
+
+  if (!titleId) {
+    return "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
+  }
+
+  const type = getGameType(titleId);
+  let imageId = titleId;
+
+  if (type === "UPDATE") {
+    // Update: muda final 800 para 000
+    imageId = titleId.substring(0, 13) + "000";
+  } else if (type === "DLC") {
+    // DLC: procura o jogo base na lista
+    const appGroup = titleId.substring(0, 12);
+    const parentGame = allGames.find(g => {
+      const gTitleId = extractTitleId(g);
+      return (
+        gTitleId && gTitleId.startsWith(appGroup) && gTitleId.endsWith("000")
+      );
+    });
+
+    if (parentGame) {
+      const parentTitleId = extractTitleId(parentGame);
+      if (parentTitleId) {
+        imageId = parentTitleId;
+      } else {
+        // Fallback: tenta subtrair 1 do 13º digito hexadecimal
+        try {
+          const nibbleChar = titleId[12];
+          const nibbleVal = parseInt(nibbleChar, 16);
+          if (!isNaN(nibbleVal) && nibbleVal > 0) {
+            const prevNibble = (nibbleVal - 1).toString(16).toUpperCase();
+            imageId = appGroup + prevNibble + "000";
+          } else {
+            imageId = titleId.substring(0, 13) + "000";
+          }
+        } catch {
+          imageId = titleId.substring(0, 13) + "000";
+        }
+      }
+    } else {
+      // Fallback: tenta subtrair 1 do 13º digito hexadecimal
+      try {
+        const nibbleChar = titleId[12];
+        const nibbleVal = parseInt(nibbleChar, 16);
+        if (!isNaN(nibbleVal) && nibbleVal > 0) {
+          const prevNibble = (nibbleVal - 1).toString(16).toUpperCase();
+          imageId = appGroup + prevNibble + "000";
+        } else {
+          imageId = titleId.substring(0, 13) + "000";
+        }
+      } catch {
+        imageId = titleId.substring(0, 13) + "000";
+      }
+    }
+  }
+
+  return `https://tinfoil.media/ti/${imageId}/256/256/`;
+}
+
 export default function SearchPage() {
   const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
@@ -36,6 +123,7 @@ export default function SearchPage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [showLongWaitMessage, setShowLongWaitMessage] = useState(false);
 
   // Busca jogos - só executa quando searchQuery é definido (após clicar em buscar)
   const {
@@ -48,6 +136,20 @@ export default function SearchPage() {
     enabled: searchQuery.trim().length > 0 && !processingGame, // Pausa busca se estiver processando
     retry: 1,
   });
+
+  // ✅ Timer para mostrar mensagem após 10 segundos de busca
+  useEffect(() => {
+    if (isSearching && searchQuery) {
+      setShowLongWaitMessage(false);
+      const timer = setTimeout(() => {
+        setShowLongWaitMessage(true);
+      }, 10000); // 10 segundos
+
+      return () => clearTimeout(timer);
+    } else {
+      setShowLongWaitMessage(false);
+    }
+  }, [isSearching, searchQuery]);
 
   // Mutation para download
   const downloadMutation = useMutation({
@@ -334,6 +436,11 @@ export default function SearchPage() {
                   <p className="text-primary font-bold text-lg">
                     Varrendo base de dados...
                   </p>
+                  {showLongWaitMessage && (
+                    <p className="text-secondary text-sm mt-4 font-mono animate-in fade-in duration-500">
+                      Estamos aguardando a resposta do servidor, tenha calma...
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -346,44 +453,57 @@ export default function SearchPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {games.map((game, index) => (
-                      <Card
-                        key={`${game.command}-${index}`}
-                        className="cyber-card p-5 hover:shadow-neon hover:border-primary transition-all duration-300 group flex flex-col justify-between"
-                      >
-                        <div>
-                          <div className="flex items-start justify-between gap-3 mb-3">
-                            <div className="bg-primary/10 p-2 rounded-lg text-primary group-hover:bg-primary group-hover:text-black transition-colors">
-                              <Gamepad2 className="w-6 h-6" />
+                    {games.map((game, index) => {
+                      const imageUrl = getGameImageUrl(game, games);
+                      return (
+                        <Card
+                          key={`${game.command}-${index}`}
+                          className="cyber-card p-5 hover:shadow-neon hover:border-primary transition-all duration-300 group flex flex-col justify-between"
+                        >
+                          <div>
+                            {/* Imagem do jogo */}
+                            <div className="relative w-full aspect-square mb-3 rounded-lg overflow-hidden bg-black">
+                              <img
+                                src={imageUrl}
+                                alt={game.name}
+                                className="w-full h-full object-cover"
+                                onError={e => {
+                                  (e.target as HTMLImageElement).src =
+                                    "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
+                                }}
+                              />
                             </div>
-                            {game.size && game.size !== "N/A" && (
-                              <Badge
-                                variant="outline"
-                                className="font-mono text-xs"
-                              >
-                                {game.size}
-                              </Badge>
-                            )}
+
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              {game.size && game.size !== "N/A" && (
+                                <Badge
+                                  variant="outline"
+                                  className="font-mono text-xs"
+                                >
+                                  {game.size}
+                                </Badge>
+                              )}
+                            </div>
+
+                            <h3
+                              className="text-foreground font-bold text-base mb-2 line-clamp-2 leading-tight min-h-[2.5rem]"
+                              title={game.name}
+                            >
+                              {game.name}
+                            </h3>
                           </div>
 
-                          <h3
-                            className="text-foreground font-bold text-base mb-2 line-clamp-2 leading-tight min-h-[2.5rem]"
-                            title={game.name}
+                          <Button
+                            size="sm"
+                            className="w-full mt-4 bg-transparent border border-primary text-primary hover:bg-primary hover:text-black group-hover:shadow-[0_0_15px_rgba(var(--primary),0.4)] transition-all"
+                            onClick={() => handleDownload(game)}
                           >
-                            {game.name}
-                          </h3>
-                        </div>
-
-                        <Button
-                          size="sm"
-                          className="w-full mt-4 bg-transparent border border-primary text-primary hover:bg-primary hover:text-black group-hover:shadow-[0_0_15px_rgba(var(--primary),0.4)] transition-all"
-                          onClick={() => handleDownload(game)}
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          BAIXAR
-                        </Button>
-                      </Card>
-                    ))}
+                            <Download className="w-4 h-4 mr-2" />
+                            BAIXAR
+                          </Button>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </>
               )}

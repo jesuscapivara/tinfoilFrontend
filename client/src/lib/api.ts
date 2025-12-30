@@ -496,6 +496,7 @@ export interface SearchGame {
   name: string;
   command: string;
   size: string;
+  titleId?: string | null; // Title ID encontrado pelo TitleDB (opcional)
 }
 
 export interface SearchGamesResponse {
