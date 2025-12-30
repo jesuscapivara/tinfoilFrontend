@@ -199,7 +199,7 @@ export default function DownloadsPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-primary text-2xl font-bold animate-pulse">
-          ▲ INITIALIZING SYSTEM ▼
+          ▲ INICIALIZANDO SISTEMA ▼
         </div>
       </div>
     );
@@ -216,10 +216,10 @@ export default function DownloadsPage() {
       <div className="border-b-2 border-primary bg-card/80 backdrop-blur">
         <div className="container py-8">
           <h1 className="text-3xl font-bold text-primary uppercase tracking-widest">
-            Download Manager
+            Gerenciador de Download
           </h1>
           <p className="text-secondary text-sm mt-2 font-mono">
-            Manage torrent downloads and queue
+            Gerencie downloads de torrent e fila
           </p>
         </div>
       </div>
@@ -229,14 +229,14 @@ export default function DownloadsPage() {
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-primary uppercase tracking-widest mb-6 flex items-center gap-3">
             <span className="text-secondary">▸</span>
-            Active Downloads
+            Downloads Ativos
             <span className="text-secondary">◂</span>
           </h2>
 
           {downloadsLoading ? (
             <Card className="cyber-card text-center py-12">
               <div className="text-primary text-xl font-bold animate-pulse">
-                ▲ LOADING ▼
+                ▲ CARREGANDO ▼
               </div>
             </Card>
           ) : downloads?.active && downloads.active.length > 0 ? (
@@ -521,8 +521,8 @@ export default function DownloadsPage() {
                                   <Cpu className="w-3 h-3" />
                                 )}
                                 {download.phase === "uploading"
-                                  ? "Current File"
-                                  : "Peers"}
+                                  ? "Arquivo Atual"
+                                  : "Pares"}
                               </p>
                               <p
                                 className="text-foreground font-mono mt-1 truncate"
@@ -546,7 +546,7 @@ export default function DownloadsPage() {
                                 {download.phase === "uploading" ? (
                                   <>
                                     <ArrowUpCircle className="w-3 h-3" />{" "}
-                                    Progress
+                                    Progresso
                                   </>
                                 ) : (
                                   <>
@@ -556,7 +556,7 @@ export default function DownloadsPage() {
                               </p>
                               <p className="text-foreground font-mono mt-1">
                                 {download.phase === "uploading"
-                                  ? `${download.upload?.fileIndex || 0} / ${download.upload?.totalFiles || 0} files`
+                                  ? `${download.upload?.fileIndex || 0} / ${download.upload?.totalFiles || 0} arquivos`
                                   : download.download?.eta || "--:--"}
                               </p>
                             </div>
@@ -610,7 +610,7 @@ export default function DownloadsPage() {
           ) : (
             <Card className="cyber-card text-center py-12">
               <CheckCircle2 className="w-12 h-12 text-secondary mx-auto mb-3 opacity-50" />
-              <p className="text-secondary">No active downloads</p>
+              <p className="text-secondary">Nenhum download ativo</p>
             </Card>
           )}
         </div>
@@ -620,7 +620,7 @@ export default function DownloadsPage() {
           <div className="mb-12">
             <h2 className="text-2xl font-bold text-primary uppercase tracking-widest mb-6 flex items-center gap-3">
               <span className="text-secondary">▸</span>
-              Download Queue
+              Fila de Download
               <span className="text-secondary">◂</span>
             </h2>
 
@@ -652,7 +652,7 @@ export default function DownloadsPage() {
         {/* Upload Section - MOVED TO BOTTOM */}
         <Card className="cyber-card mt-12">
           <h2 className="text-xl font-bold text-primary uppercase tracking-wider mb-6">
-            Upload Torrent
+            Upload de Torrent
           </h2>
 
           <div className="space-y-4">
@@ -703,9 +703,9 @@ export default function DownloadsPage() {
                 <p className="text-foreground font-bold mb-2">
                   {fileInput
                     ? `✓ ${fileInput.name}`
-                    : "Click to select .torrent file"}
+                    : "Clique para selecionar arquivo .torrent"}
                 </p>
-                <p className="text-xs text-secondary">or drag and drop</p>
+                <p className="text-xs text-secondary">ou arraste e solte</p>
               </label>
             </div>
 
@@ -715,8 +715,8 @@ export default function DownloadsPage() {
               disabled={!fileInput || uploadMutation.isPending}
             >
               {uploadMutation.isPending
-                ? "⟳ UPLOADING..."
-                : "▶ QUEUE DOWNLOAD"}
+                ? "⟳ ENVIANDO..."
+                : "▶ ADICIONAR À FILA"}
             </Button>
           </div>
         </Card>

@@ -77,7 +77,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-primary text-2xl font-bold animate-pulse">
-          ▲ INITIALIZING SYSTEM ▼
+          ▲ INICIALIZANDO SISTEMA ▼
         </div>
       </div>
     );
@@ -113,7 +113,7 @@ export default function ProfilePage() {
                 <User className="w-8 h-8 text-secondary" />
                 <div>
                   <h1 className="text-3xl font-bold text-primary uppercase tracking-widest">
-                    Profile & Settings
+                    Perfil e Configurações
                   </h1>
                   <p className="text-secondary text-sm mt-2 font-mono">
                     Gerencie suas credenciais e configurações
@@ -128,14 +128,14 @@ export default function ProfilePage() {
             <div className="p-6 space-y-6">
               <h2 className="text-2xl font-bold text-primary uppercase tracking-wider flex items-center gap-3">
                 <span className="text-secondary">▸</span>
-                Account Information
+                Informações da Conta
                 <span className="text-secondary">◂</span>
               </h2>
 
               <div className="space-y-4">
                 <div className="border-b border-primary/30 pb-4">
                   <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
-                    Email
+                    E-mail
                   </p>
                   <p className="text-lg font-mono text-foreground font-bold">
                     {user.email}
@@ -144,7 +144,7 @@ export default function ProfilePage() {
 
                 <div className="border-b border-primary/30 pb-4">
                   <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
-                    Role
+                    Função
                   </p>
                   <div className="flex items-center gap-2">
                     {user.role === "admin" ? (
@@ -163,21 +163,21 @@ export default function ProfilePage() {
 
                 <div className="border-b border-primary/30 pb-4">
                   <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
-                    Account Status
+                    Status da Conta
                   </p>
                   <div className="flex items-center gap-2">
                     {user.isApproved ? (
                       <>
                         <CheckCircle2 className="w-5 h-5 text-secondary" />
                         <p className="text-lg text-secondary font-bold">
-                          APPROVED
+                          APROVADO
                         </p>
                       </>
                     ) : (
                       <>
                         <AlertCircle className="w-5 h-5 text-destructive" />
                         <p className="text-lg text-destructive font-bold">
-                          PENDING APPROVAL
+                          AGUARDANDO APROVAÇÃO
                         </p>
                       </>
                     )}
@@ -193,14 +193,14 @@ export default function ProfilePage() {
               <h2 className="text-2xl font-bold text-primary uppercase tracking-wider flex items-center gap-3">
                 <Key className="w-6 h-6 text-secondary" />
                 <span className="text-secondary">▸</span>
-                Tinfoil Credentials
+                Credenciais Tinfoil
                 <span className="text-secondary">◂</span>
               </h2>
 
               <div className="space-y-4">
                 <div className="border-b border-primary/30 pb-4">
                   <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
-                    Tinfoil Username
+                    Usuário Tinfoil
                   </p>
                   <div className="flex items-center gap-2">
                     <p className="text-lg font-mono text-primary font-bold flex-1">
@@ -221,7 +221,7 @@ export default function ProfilePage() {
 
                 <div className="border-b border-primary/30 pb-4">
                   <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
-                    Tinfoil Host
+                    Host Tinfoil
                   </p>
                   <div className="flex items-center gap-2">
                     <p className="text-lg font-mono text-primary font-bold flex-1">

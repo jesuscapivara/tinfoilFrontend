@@ -58,7 +58,7 @@ export default function UsersPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-primary text-2xl font-bold animate-pulse">
-          ▲ INITIALIZING SYSTEM ▼
+          ▲ INICIALIZANDO SISTEMA ▼
         </div>
       </div>
     );
@@ -78,7 +78,7 @@ export default function UsersPage() {
             <Users className="w-8 h-8 text-secondary" />
             <div>
               <h1 className="text-3xl font-bold text-primary uppercase tracking-widest">
-                User Management
+                Gerenciamento de Usuários
               </h1>
               <p className="text-secondary text-sm mt-2 font-mono">
                 Gerencie solicitações de acesso e usuários do sistema
@@ -95,7 +95,7 @@ export default function UsersPage() {
             <div className="flex items-center gap-3 mb-6">
               <Clock className="w-6 h-6 text-secondary" />
               <h2 className="text-2xl font-bold text-primary uppercase tracking-wider">
-                Pending Approvals
+                Aprovações Pendentes
               </h2>
               {pendingUsers && pendingUsers.length > 0 && (
                 <span className="ml-auto bg-destructive text-destructive-foreground px-3 py-1 text-xs font-bold rounded-none">
@@ -107,7 +107,7 @@ export default function UsersPage() {
             {pendingLoading ? (
               <div className="text-center py-8">
                 <div className="text-primary text-xl font-bold animate-pulse">
-                  LOADING...
+                  CARREGANDO...
                 </div>
               </div>
             ) : pendingUsers && pendingUsers.length > 0 ? (
@@ -151,7 +151,7 @@ export default function UsersPage() {
                         ) : (
                           <>
                             <CheckCircle2 className="w-4 h-4 mr-1" />
-                            APPROVE
+                            APROVAR
                           </>
                         )}
                       </Button>
@@ -173,7 +173,7 @@ export default function UsersPage() {
                         ) : (
                           <>
                             <XCircle className="w-4 h-4 mr-1" />
-                            REJECT
+                            REJEITAR
                           </>
                         )}
                       </Button>

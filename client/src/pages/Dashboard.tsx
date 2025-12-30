@@ -96,7 +96,7 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-primary text-2xl font-bold animate-pulse">
-          ▲ INITIALIZING SYSTEM ▼
+          ▲ INICIALIZANDO SISTEMA ▼
         </div>
       </div>
     );
@@ -117,7 +117,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-secondary text-xs uppercase font-bold tracking-wider">
-                  Total Games
+                  Total de Jogos
                 </p>
                 <p className="text-4xl font-bold text-primary mt-3">
                   {indexingStatus?.totalGames ||
@@ -133,7 +133,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-secondary text-xs uppercase font-bold tracking-wider">
-                  Base Games
+                  Jogos Base
                 </p>
                 <p className="text-4xl font-bold text-primary mt-3">
                   {indexingStatus?.stats?.base || 0}
@@ -147,7 +147,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-secondary text-xs uppercase font-bold tracking-wider">
-                  Last Update
+                  Última Atualização
                 </p>
                 <p className="text-lg text-primary mt-3 font-mono">
                   {indexingStatus?.lastUpdate
@@ -168,7 +168,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-primary uppercase tracking-wider mb-2">
-                  Game Index Management
+                  Gerenciamento de Índice de Jogos
                 </h3>
                 <p className="text-secondary text-sm">
                   {indexingStatus?.isIndexing
@@ -210,7 +210,7 @@ export default function Dashboard() {
 
             <h2 className="text-2xl font-bold text-primary uppercase tracking-widest flex items-center gap-3">
               <span className="text-secondary">▸</span>
-              Admin Controls
+              Controles Admin
               <span className="text-secondary">◂</span>
             </h2>
 
@@ -219,7 +219,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-3 mb-6">
                 <Users className="w-6 h-6 text-secondary" />
                 <h3 className="text-xl font-bold text-primary uppercase tracking-wider">
-                  Pending Approvals
+                  Aprovações Pendentes
                 </h3>
                 {pendingUsers && pendingUsers.length > 0 && (
                   <span className="ml-auto bg-destructive text-destructive-foreground px-3 py-1 text-xs font-bold rounded-none">
@@ -249,7 +249,7 @@ export default function Dashboard() {
                           {pendingUser.email}
                         </p>
                         <p className="text-xs text-secondary mt-1">
-                          Registered:{" "}
+                          Registrado em:{" "}
                           {new Date(pendingUser.createdAt).toLocaleDateString(
                             "pt-BR"
                           )}
@@ -271,7 +271,7 @@ export default function Dashboard() {
                         >
                           {approveMutation.isPending
                             ? "PROCESSANDO..."
-                            : "APPROVE"}
+                            : "APROVAR"}
                         </Button>
                         <Button
                           size="sm"
@@ -289,7 +289,7 @@ export default function Dashboard() {
                         >
                           {rejectMutation.isPending
                             ? "PROCESSANDO..."
-                            : "REJECT"}
+                            : "REJEITAR"}
                         </Button>
                       </div>
                     </div>
@@ -311,7 +311,7 @@ export default function Dashboard() {
 
           <h2 className="text-2xl font-bold text-primary uppercase tracking-widest flex items-center gap-3">
             <span className="text-secondary">▸</span>
-            Your Credentials
+            Suas Credenciais
             <span className="text-secondary">◂</span>
           </h2>
 
@@ -319,7 +319,7 @@ export default function Dashboard() {
             <div className="space-y-6">
               <div className="border-b border-primary/30 pb-4">
                 <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
-                  Tinfoil Username
+                  Usuário Tinfoil
                 </p>
                 <p className="text-lg font-mono text-primary font-bold">
                   {user.tinfoilUser || "NOT SET"}
@@ -328,21 +328,21 @@ export default function Dashboard() {
 
               <div className="border-b border-primary/30 pb-4">
                 <p className="text-secondary text-xs uppercase font-bold tracking-wider mb-2">
-                  Account Status
+                  Status da Conta
                 </p>
                 <div className="flex items-center gap-2">
                   {user.isApproved ? (
                     <>
                       <CheckCircle2 className="w-5 h-5 text-secondary" />
                       <p className="text-lg text-secondary font-bold">
-                        APPROVED
+                        APROVADO
                       </p>
                     </>
                   ) : (
                     <>
                       <AlertCircle className="w-5 h-5 text-destructive" />
                       <p className="text-lg text-destructive font-bold">
-                        PENDING APPROVAL
+                        AGUARDANDO APROVAÇÃO
                       </p>
                     </>
                   )}

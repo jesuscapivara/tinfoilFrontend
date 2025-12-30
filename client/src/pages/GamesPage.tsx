@@ -275,7 +275,7 @@ export default function GamesPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-primary text-2xl font-bold animate-pulse">
-          ▲ INITIALIZING SYSTEM ▼
+          ▲ INICIALIZANDO SISTEMA ▼
         </div>
       </div>
     );
@@ -296,16 +296,16 @@ export default function GamesPage() {
               <Database className="w-8 h-8 text-secondary" />
               <div>
                 <h1 className="text-3xl font-bold text-primary uppercase tracking-widest">
-                  Game Index
+                  Índice de Jogos
                 </h1>
                 <p className="text-secondary text-sm mt-2 font-mono">
                   {isLoading
-                    ? "Loading..."
+                    ? "Carregando..."
                     : error
-                      ? "Error loading games"
+                      ? "Erro ao carregar jogos"
                       : stats
                         ? `${stats.base} base${stats.dlc > 0 ? ` • ${stats.dlc} DLCs` : ""}${stats.update > 0 ? ` • ${stats.update} updates` : ""} • ${stats.total} total`
-                        : `${allGames.length} games indexed`}
+                        : `${allGames.length} jogos indexados`}
                 </p>
               </div>
             </div>
@@ -361,17 +361,17 @@ export default function GamesPage() {
         {isLoading ? (
           <Card className="cyber-card text-center py-16">
             <div className="text-primary text-2xl font-bold animate-pulse">
-              ▲ LOADING GAMES ▼
+              ▲ CARREGANDO JOGOS ▼
             </div>
           </Card>
         ) : error ? (
           <Card className="cyber-card text-center py-16">
             <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
             <p className="text-destructive font-bold text-lg">
-              Error loading games
+              Erro ao carregar jogos
             </p>
             <p className="text-secondary text-sm mt-2">
-              {error instanceof Error ? error.message : "Unknown error"}
+              {error instanceof Error ? error.message : "Erro desconhecido"}
             </p>
           </Card>
         ) : filteredGames && filteredGames.length > 0 ? (
@@ -588,12 +588,14 @@ export default function GamesPage() {
           <Card className="cyber-card text-center py-16">
             <Database className="w-16 h-16 text-secondary mx-auto mb-4 opacity-40" />
             <p className="text-secondary font-bold text-lg">
-              {searchTerm ? "Nenhum jogo encontrado" : "No games indexed yet"}
+              {searchTerm
+                ? "Nenhum jogo encontrado"
+                : "Nenhum jogo indexado ainda"}
             </p>
             <p className="text-muted-foreground text-sm mt-2">
               {searchTerm
                 ? "Tente buscar com outros termos"
-                : "Upload torrent files to index games"}
+                : "Faça upload de arquivos torrent para indexar jogos"}
             </p>
           </Card>
         )}

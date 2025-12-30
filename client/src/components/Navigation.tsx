@@ -36,11 +36,11 @@ export function Navigation() {
 
   const navItems = [
     { label: "Dashboard", href: "/dashboard", admin: false },
-    { label: "Games", href: "/games", admin: false }, // Games acessível para todos
+    { label: "Jogos", href: "/games", admin: false }, // Jogos acessível para todos
     { label: "Buscar", href: "/search", admin: false }, // Busca acessível para todos
     { label: "Downloads", href: "/downloads", admin: false }, // Downloads acessível para todos
-    { label: "Profile", href: "/profile", admin: false }, // Profile acessível para todos
-    { label: "Users", href: "/users", admin: true }, // Users apenas para admins
+    { label: "Perfil", href: "/profile", admin: false }, // Perfil acessível para todos
+    { label: "Usuários", href: "/users", admin: true }, // Usuários apenas para admins
   ];
 
   const filteredItems = navItems.filter(
@@ -83,7 +83,7 @@ export function Navigation() {
                   {user?.role === "admin" ? "● ADMIN" : "● USER"} | STATUS:{" "}
                 </span>
                 {healthLoading ? (
-                  <span className="text-secondary">● CHECKING...</span>
+                  <span className="text-secondary">● VERIFICANDO...</span>
                 ) : isBackendOnline ? (
                   <span className="text-green-500">● ONLINE</span>
                 ) : (
@@ -98,7 +98,7 @@ export function Navigation() {
               className="border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all"
             >
               <LogOut className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">LOGOUT</span>
+              <span className="hidden sm:inline">SAIR</span>
             </Button>
 
             {/* Mobile Menu Button */}

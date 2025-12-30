@@ -83,11 +83,6 @@ export default function Register() {
         setEmail("");
         setPassword("");
         setConfirmPassword("");
-
-        // Redireciona para login após 3 segundos
-        setTimeout(() => {
-          setLocation("/login");
-        }, 3000);
       } else {
         setError(data.error || "Erro ao realizar cadastro");
       }
@@ -133,13 +128,10 @@ export default function Register() {
               <p className="text-secondary text-sm font-mono">
                 Você receberá um e-mail quando sua conta for aprovada.
               </p>
-              <p className="text-secondary text-xs font-mono animate-pulse">
-                Redirecionando para login em 3 segundos...
-              </p>
               <Link href="/login">
                 <Button variant="outline" className="w-full">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Voltar para Login
+                  Ir para Login
                 </Button>
               </Link>
             </div>

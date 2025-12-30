@@ -26,7 +26,7 @@ export default function NotFound() {
           </h1>
 
           <h2 className="text-2xl font-bold text-foreground uppercase tracking-wider mb-4">
-            ▸ PAGE NOT FOUND ◂
+            ▸ PÁGINA NÃO ENCONTRADA ◂
           </h2>
 
           <p className="text-secondary mb-8 leading-relaxed font-mono">
