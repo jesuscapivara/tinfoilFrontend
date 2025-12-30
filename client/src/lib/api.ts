@@ -244,7 +244,7 @@ export async function getBackendHealth(): Promise<BackendHealth> {
 }
 
 /**
- * Força uma nova indexação no backend
+ * Força uma nova indexação no backend (via Tinfoil Auth)
  */
 export async function refreshBackendIndex(
   tinfoilUser?: string,
@@ -260,6 +260,29 @@ export async function refreshBackendIndex(
   });
 
   return response.text();
+}
+
+/**
+ * Força uma nova indexação no backend (via JWT - apenas admin)
+ */
+export async function refreshIndexAsAdmin(
+  jwtToken: string
+): Promise<{ success: boolean; message: string }> {
+  const response = await fetchBackend("/bridge/refresh-index", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${jwtToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ error: "Erro desconhecido" }));
+    throw new Error(errorData.error || "Erro ao iniciar indexação");
+  }
+
+  return response.json();
 }
 
 /**

@@ -16,8 +16,10 @@ import {
   getBackendPendingUsers,
   approveUser,
   rejectUser,
+  refreshIndexAsAdmin,
 } from "@/lib/api";
 import { toast } from "sonner";
+import { RefreshCw } from "lucide-react";
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -70,6 +72,23 @@ export default function Dashboard() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Erro ao rejeitar usuário");
+    },
+  });
+
+  // Mutation para forçar indexação (apenas admin)
+  const refreshIndexMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) throw new Error("Token não encontrado");
+      return refreshIndexAsAdmin(token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["indexing-status"] });
+      queryClient.invalidateQueries({ queryKey: ["games"] });
+      toast.success("Indexação iniciada! Os jogos serão atualizados em breve.");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erro ao iniciar indexação");
     },
   });
 
@@ -148,11 +167,33 @@ export default function Dashboard() {
           <div className="space-y-8">
             <div className="cyber-divider" />
 
-            <h2 className="text-2xl font-bold text-primary uppercase tracking-widest flex items-center gap-3">
-              <span className="text-secondary">▸</span>
-              Admin Controls
-              <span className="text-secondary">◂</span>
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-primary uppercase tracking-widest flex items-center gap-3">
+                <span className="text-secondary">▸</span>
+                Admin Controls
+                <span className="text-secondary">◂</span>
+              </h2>
+              <Button
+                onClick={() => refreshIndexMutation.mutate()}
+                disabled={
+                  refreshIndexMutation.isPending || indexingStatus?.isIndexing
+                }
+                className="cyber-btn"
+              >
+                {refreshIndexMutation.isPending ||
+                indexingStatus?.isIndexing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    INDEXANDO...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    REFRESH INDEX
+                  </>
+                )}
+              </Button>
+            </div>
 
             {/* Pending Users */}
             <Card className="cyber-card">
