@@ -299,6 +299,77 @@ export async function getBackendPendingUsers(jwtToken: string): Promise<any[]> {
 }
 
 /**
+ * Regenera credenciais Tinfoil do usuário
+ */
+export async function regenerateCredentials(
+  jwtToken: string
+): Promise<{ success: boolean; newPass: string }> {
+  const response = await fetchBackend("/bridge/regenerate-credentials", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${jwtToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ error: "Erro desconhecido" }));
+    throw new Error(errorData.error || "Erro ao regenerar credenciais");
+  }
+
+  return response.json();
+}
+
+/**
+ * Aprova um usuário pendente
+ */
+export async function approveUser(
+  userId: string,
+  jwtToken: string
+): Promise<{ success: boolean }> {
+  const response = await fetchBackend(`/bridge/users/approve/${userId}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${jwtToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ error: "Erro desconhecido" }));
+    throw new Error(errorData.error || "Erro ao aprovar usuário");
+  }
+
+  return response.json();
+}
+
+/**
+ * Rejeita um usuário pendente
+ */
+export async function rejectUser(
+  userId: string,
+  jwtToken: string
+): Promise<{ success: boolean }> {
+  const response = await fetchBackend(`/bridge/users/reject/${userId}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${jwtToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ error: "Erro desconhecido" }));
+    throw new Error(errorData.error || "Erro ao rejeitar usuário");
+  }
+
+  return response.json();
+}
+
+/**
  * Faz upload de arquivo torrent
  */
 export async function uploadTorrentFile(

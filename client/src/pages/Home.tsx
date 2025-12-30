@@ -47,9 +47,19 @@ export default function Home() {
               <h1 className="text-3xl font-bold text-primary uppercase tracking-widest">
                 ▲ TINFOIL SHOP ▼
               </h1>
-              <a href={getLoginUrl()}>
-                <Button className="cyber-btn">LOGIN</Button>
-              </a>
+              <div className="flex gap-3">
+                <Link href="/login">
+                  <Button className="cyber-btn">LOGIN</Button>
+                </Link>
+                <Link href="/register">
+                  <Button
+                    variant="outline"
+                    className="border-2 border-primary text-primary hover:bg-primary/10"
+                  >
+                    REGISTRAR
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -75,18 +85,20 @@ export default function Home() {
               </p>
 
               <div className="flex gap-4 pt-4">
-                <a href={getLoginUrl()}>
+                <Link href="/login">
                   <Button className="cyber-btn text-lg px-8 py-4">
                     START SESSION
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
-                </a>
-                <Button
-                  variant="outline"
-                  className="border-2 border-primary text-primary hover:bg-primary/10 text-lg px-8 py-4 font-bold uppercase"
-                >
-                  DOCUMENTATION
-                </Button>
+                </Link>
+                <Link href="/register">
+                  <Button
+                    variant="outline"
+                    className="border-2 border-primary text-primary hover:bg-primary/10 text-lg px-8 py-4 font-bold uppercase"
+                  >
+                    REGISTRAR
+                  </Button>
+                </Link>
               </div>
             </div>
 
@@ -210,12 +222,22 @@ export default function Home() {
               Sign in with your account or register for a new one to get
               started.
             </p>
-            <a href={getLoginUrl()}>
-              <Button className="cyber-btn text-lg px-8 py-4">
-                INITIALIZE SESSION
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </a>
+            <div className="flex gap-4 justify-center">
+              <Link href="/login">
+                <Button className="cyber-btn text-lg px-8 py-4">
+                  INITIALIZE SESSION
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button
+                  variant="outline"
+                  className="border-2 border-primary text-primary hover:bg-primary/10 text-lg px-8 py-4"
+                >
+                  REGISTRAR
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 

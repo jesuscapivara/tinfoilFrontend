@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Download,
   Users,
@@ -10,10 +10,19 @@ import {
   CheckCircle2,
   Clock,
 } from "lucide-react";
-import { getBackendIndexingStatus, getBackendPendingUsers } from "@/lib/api";
+import { Link } from "wouter";
+import {
+  getBackendIndexingStatus,
+  getBackendPendingUsers,
+  approveUser,
+  rejectUser,
+} from "@/lib/api";
+import { toast } from "sonner";
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
+
   const { data: indexingStatus } = useQuery({
     queryKey: ["indexing-status"],
     queryFn: getBackendIndexingStatus,
@@ -30,6 +39,38 @@ export default function Dashboard() {
     },
     enabled: user?.role === "admin",
     refetchInterval: 10000,
+  });
+
+  // Mutation para aprovar usuário
+  const approveMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) throw new Error("Token não encontrado");
+      return approveUser(userId, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-users"] });
+      toast.success("Usuário aprovado com sucesso!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erro ao aprovar usuário");
+    },
+  });
+
+  // Mutation para rejeitar usuário
+  const rejectMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) throw new Error("Token não encontrado");
+      return rejectUser(userId, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-users"] });
+      toast.success("Usuário rejeitado");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erro ao rejeitar usuário");
+    },
   });
 
   if (authLoading) {
@@ -125,6 +166,15 @@ export default function Dashboard() {
                     {pendingUsers.length}
                   </span>
                 )}
+                <Link href="/users" className="ml-auto">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-primary/60 hover:border-primary text-xs"
+                  >
+                    Ver Todos
+                  </Button>
+                </Link>
               </div>
 
               {pendingUsers && pendingUsers.length > 0 ? (
@@ -149,18 +199,37 @@ export default function Dashboard() {
                         <Button
                           size="sm"
                           className="cyber-btn text-xs"
-                          onClick={() => {
-                            // Will implement approval logic
-                          }}
+                          onClick={() =>
+                            approveMutation.mutate(
+                              pendingUser.id || pendingUser._id
+                            )
+                          }
+                          disabled={
+                            approveMutation.isPending ||
+                            rejectMutation.isPending
+                          }
                         >
-                          APPROVE
+                          {approveMutation.isPending
+                            ? "PROCESSANDO..."
+                            : "APPROVE"}
                         </Button>
                         <Button
                           size="sm"
                           variant="destructive"
                           className="border-2 border-destructive text-destructive hover:bg-destructive/20 text-xs font-bold"
+                          onClick={() =>
+                            rejectMutation.mutate(
+                              pendingUser.id || pendingUser._id
+                            )
+                          }
+                          disabled={
+                            approveMutation.isPending ||
+                            rejectMutation.isPending
+                          }
                         >
-                          REJECT
+                          {rejectMutation.isPending
+                            ? "PROCESSANDO..."
+                            : "REJECT"}
                         </Button>
                       </div>
                     </div>
@@ -221,9 +290,11 @@ export default function Dashboard() {
               </div>
 
               {user.isApproved && (
-                <Button className="cyber-btn w-full mt-4">
-                  REGENERATE CREDENTIALS
-                </Button>
+                <Link href="/profile" className="w-full">
+                  <Button className="cyber-btn w-full mt-4">
+                    GERENCIAR CREDENCIAIS
+                  </Button>
+                </Link>
               )}
             </div>
           </Card>

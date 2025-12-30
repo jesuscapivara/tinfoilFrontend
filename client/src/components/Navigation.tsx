@@ -39,6 +39,8 @@ export function Navigation() {
     { label: "Games", href: "/games", admin: false }, // Games acessível para todos
     { label: "Buscar", href: "/search", admin: false }, // Busca acessível para todos
     { label: "Downloads", href: "/downloads", admin: false }, // Downloads acessível para todos
+    { label: "Profile", href: "/profile", admin: false }, // Profile acessível para todos
+    { label: "Users", href: "/users", admin: true }, // Users apenas para admins
   ];
 
   const filteredItems = navItems.filter(

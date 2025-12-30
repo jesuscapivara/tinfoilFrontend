@@ -3,10 +3,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import DownloadsPage from "@/pages/DownloadsPage";
 import GamesPage from "@/pages/GamesPage";
 import SearchPage from "@/pages/SearchPage";
+import ProfilePage from "@/pages/ProfilePage";
+import UsersPage from "@/pages/UsersPage";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -19,6 +22,7 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/login"} component={Login} />
+      <Route path={"/register"} component={Register} />
       <Route path={"/dashboard"}>
         <ProtectedRoute>
           <Dashboard />
@@ -37,6 +41,16 @@ function Router() {
       <Route path={"/search"}>
         <ProtectedRoute>
           <SearchPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/profile"}>
+        <ProtectedRoute>
+          <ProfilePage />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/users"}>
+        <ProtectedRoute requireAdmin={true}>
+          <UsersPage />
         </ProtectedRoute>
       </Route>
       <Route path={"/404"} component={NotFound} />

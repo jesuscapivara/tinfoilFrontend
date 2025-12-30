@@ -21,6 +21,7 @@ type User = {
   isAdmin: boolean;
   isApproved: boolean;
   tinfoilUser?: string;
+  tinfoilHost?: string | null;
 };
 
 type AuthContextType = {
@@ -64,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin: userData.isAdmin,
         isApproved: userData.isApproved,
         tinfoilUser: userData.tinfoilUser,
+        tinfoilHost: userData.host || null,
       };
 
       // 🛠️ CORREÇÃO DA RACE CONDITION:
