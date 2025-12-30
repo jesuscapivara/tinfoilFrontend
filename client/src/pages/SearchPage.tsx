@@ -2,7 +2,12 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { searchGames, downloadFromSearch, SearchGame } from "@/lib/api";
+import {
+  searchGames,
+  downloadFromSearch,
+  SearchGame,
+  DuplicateGameError,
+} from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -96,45 +101,48 @@ export default function SearchPage() {
       }, 1000);
     },
     onError: (error: Error) => {
-      // Verifica se é erro de duplicata
-      const isDuplicate =
-        error.message.includes("já está na fila") ||
-        error.message.includes("já está sendo baixado") ||
-        error.message.includes("Duplicado") ||
-        error.message.includes("já existe") ||
-        error.message.includes("já cadastrado") ||
-        error.message.includes("409");
-
-      if (isDuplicate) {
-        // Mensagem específica baseada no tipo de duplicata
-        if (error.message.includes("já existe no sistema")) {
-          setStatusMessage("⚠️ Este jogo já existe no sistema");
-          toast.error(
-            "Este jogo já foi indexado anteriormente. Verifique a página de Games.",
-            { duration: 5000 }
-          );
-        } else {
-          setStatusMessage("⚠️ Este jogo já está na fila ou sendo baixado");
-          toast.error(
-            "Este jogo já está sendo processado. Verifique a página de Downloads.",
-            { duration: 5000 }
-          );
-        }
+      // TRATAMENTO DIFERENCIADO: Duplicata vs Erro Genérico
+      if (error instanceof DuplicateGameError) {
+        setStatusMessage("⚠️ Este jogo já existe no sistema");
+        toast.warning("Arquivo Duplicado", {
+          description: error.message,
+          duration: 5000,
+        });
+        // Reseta após 6 segundos para dar tempo de ler
+        setTimeout(() => {
+          setProcessingGame(null);
+          setIsSuccess(false);
+          setCountdown(null);
+        }, 6000);
       } else {
-        setStatusMessage(
-          "❌ Erro: " + (error.message || "Falha na solicitação")
-        );
-        toast.error(error.message || "Erro ao iniciar download");
-      }
+        // Verifica se é erro de fila/ativo (não é duplicata, mas é conflito)
+        const isQueueConflict =
+          error.message.includes("já está na fila") ||
+          error.message.includes("já está sendo baixado");
 
-      // Reseta após erro para permitir tentar de novo
-      // Aumenta o tempo de leitura para 6 segundos se for erro de duplicata
-      const resetTimeout = isDuplicate ? 6000 : 4000;
-      setTimeout(() => {
-        setProcessingGame(null);
-        setIsSuccess(false);
-        setCountdown(null);
-      }, resetTimeout);
+        if (isQueueConflict) {
+          setStatusMessage("⚠️ Este jogo já está na fila ou sendo baixado");
+          toast.warning("Jogo em Processamento", {
+            description:
+              "Este jogo já está sendo processado. Verifique a página de Downloads.",
+            duration: 5000,
+          });
+        } else {
+          setStatusMessage(
+            "❌ Erro: " + (error.message || "Falha na solicitação")
+          );
+          toast.error("Erro ao Iniciar Download", {
+            description: error.message || "Erro desconhecido",
+          });
+        }
+
+        // Reseta após erro para permitir tentar de novo
+        setTimeout(() => {
+          setProcessingGame(null);
+          setIsSuccess(false);
+          setCountdown(null);
+        }, 4000);
+      }
     },
   });
 

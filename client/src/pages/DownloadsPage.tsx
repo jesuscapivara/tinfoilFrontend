@@ -8,6 +8,7 @@ import {
   X,
   CheckCircle2,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ import {
   uploadTorrentFile,
   getActiveDownloads,
   cancelDownload,
+  DuplicateGameError,
 } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -38,7 +40,20 @@ export default function DownloadsPage() {
       queryClient.invalidateQueries({ queryKey: ["active-downloads"] });
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao enviar torrent: ${error.message}`);
+      // TRATAMENTO DIFERENCIADO: Duplicata vs Erro Genérico
+      if (error instanceof DuplicateGameError) {
+        toast.warning("Arquivo Duplicado", {
+          description: error.message,
+          duration: 5000,
+        });
+        // NÃO limpa o input, permite que o usuário veja que deu errado
+      } else {
+        // Erro genérico (Rede, 500, Auth)
+        toast.error("Falha no Upload", {
+          description: error.message || "Erro desconhecido",
+        });
+        setFileInput(null); // Limpa apenas em caso de erro genérico
+      }
     },
   });
 
@@ -139,79 +154,155 @@ export default function DownloadsPage() {
             </Card>
           ) : downloads?.active && downloads.active.length > 0 ? (
             <div className="space-y-4">
-              {downloads.active.map((download: any) => (
-                <Card key={download.id} className="cyber-card">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-start gap-4">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-foreground">
-                          {download.name}
-                        </h3>
-                        <p className="text-xs text-secondary mt-2 font-mono">
-                          {download.phase === "downloading" && "⬇ DOWNLOADING"}
-                          {download.phase === "uploading" && "⬆ UPLOADING"}
-                          {download.phase === "queued" && "⏳ QUEUED"}
-                          {download.phase === "paused" && "⏸ PAUSED"}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-3xl font-bold text-primary">
-                          {download.download?.percent?.toFixed(0) || 0}%
-                        </p>
-                      </div>
-                    </div>
+              {downloads.active.map((download: any) => {
+                // Determina se deve mostrar estatísticas ou mensagens de status
+                const showStats =
+                  download.phase === "downloading" ||
+                  download.phase === "uploading";
+                const isChecking = download.phase === "checking";
+                const isConnecting = download.phase === "connecting";
+                const isError = download.phase === "error";
+                const isDuplicate =
+                  isError && download.error?.includes("Duplicado");
 
-                    {/* Progress Bar */}
-                    <div className="w-full h-2 bg-primary/20 border border-primary/50">
-                      <div
-                        className="h-full bg-primary transition-all duration-300"
-                        style={{ width: `${download.download?.percent || 0}%` }}
-                      />
-                    </div>
+                return (
+                  <Card key={download.id} className="cyber-card">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-foreground">
+                            {download.name}
+                          </h3>
+                          <p className="text-xs text-secondary mt-2 font-mono">
+                            {isChecking && "🔍 CHECANDO DUPLICIDADE..."}
+                            {isConnecting && "📡 CONECTANDO AOS PARES..."}
+                            {download.phase === "downloading" &&
+                              "⬇ DOWNLOADING"}
+                            {download.phase === "uploading" && "⬆ UPLOADING"}
+                            {download.phase === "queued" && "⏳ QUEUED"}
+                            {download.phase === "paused" && "⏸ PAUSED"}
+                            {isError && !isDuplicate && "❌ ERRO"}
+                            {isDuplicate && "⚠️ DUPLICATA DETECTADA"}
+                          </p>
+                        </div>
+                        {showStats && (
+                          <div className="text-right">
+                            <p className="text-3xl font-bold text-primary">
+                              {download.download?.percent?.toFixed(0) || 0}%
+                            </p>
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Details Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                      <div className="border border-primary/30 p-3 bg-input/50">
-                        <p className="text-secondary font-bold">Downloaded</p>
-                        <p className="text-foreground font-mono mt-1">
-                          {download.download?.downloaded || "0 MB"}
-                        </p>
-                      </div>
-                      <div className="border border-primary/30 p-3 bg-input/50">
-                        <p className="text-secondary font-bold">Speed</p>
-                        <p className="text-foreground font-mono mt-1">
-                          {download.download?.speed || "-- MB/s"}
-                        </p>
-                      </div>
-                      <div className="border border-primary/30 p-3 bg-input/50">
-                        <p className="text-secondary font-bold">ETA</p>
-                        <p className="text-foreground font-mono mt-1">
-                          {download.download?.eta || "--:--"}
-                        </p>
-                      </div>
-                      <div className="border border-primary/30 p-3 bg-input/50">
-                        <p className="text-secondary font-bold">Peers</p>
-                        <p className="text-foreground font-mono mt-1">
-                          {download.download?.peers || 0}
-                        </p>
-                      </div>
-                    </div>
+                      {/* Status Messages (antes das estatísticas) */}
+                      {isChecking && (
+                        <div className="bg-primary/10 border border-primary/50 p-6 rounded-lg text-center">
+                          <div className="flex items-center justify-center gap-3 mb-2">
+                            <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                            <p className="text-primary font-bold text-lg">
+                              Verificando duplicidade...
+                            </p>
+                          </div>
+                          <p className="text-secondary text-sm font-mono">
+                            Analisando arquivos do torrent
+                          </p>
+                        </div>
+                      )}
 
-                    {/* Controls */}
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="flex-1 text-xs border-2 border-destructive"
-                        onClick={() => handleCancel(download.id)}
-                        disabled={cancelMutation.isPending}
-                      >
-                        <X className="w-4 h-4 mr-2" /> CANCEL
-                      </Button>
+                      {isConnecting && (
+                        <div className="bg-primary/10 border border-primary/50 p-6 rounded-lg text-center">
+                          <div className="flex items-center justify-center gap-3 mb-2">
+                            <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                            <p className="text-primary font-bold text-lg">
+                              Conectando aos pares...
+                            </p>
+                          </div>
+                          <p className="text-secondary text-sm font-mono">
+                            Aguardando conexão com outros usuários
+                          </p>
+                        </div>
+                      )}
+
+                      {isDuplicate && (
+                        <div className="bg-destructive/10 border border-destructive/50 p-6 rounded-lg text-center">
+                          <div className="flex items-center justify-center gap-3 mb-2">
+                            <AlertCircle className="w-5 h-5 text-destructive" />
+                            <p className="text-destructive font-bold text-lg">
+                              Duplicata Detectada
+                            </p>
+                          </div>
+                          <p className="text-secondary text-sm font-mono mb-2">
+                            {download.error?.replace("Duplicado! ", "") ||
+                              "Este jogo já existe no sistema"}
+                          </p>
+                          <p className="text-xs text-secondary opacity-70">
+                            Removendo da fila automaticamente...
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Progress Bar - Só mostra se estiver baixando */}
+                      {showStats && (
+                        <div className="w-full h-2 bg-primary/20 border border-primary/50">
+                          <div
+                            className="h-full bg-primary transition-all duration-300"
+                            style={{
+                              width: `${download.download?.percent || 0}%`,
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Details Grid - Só mostra se estiver baixando */}
+                      {showStats && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                          <div className="border border-primary/30 p-3 bg-input/50">
+                            <p className="text-secondary font-bold">
+                              Downloaded
+                            </p>
+                            <p className="text-foreground font-mono mt-1">
+                              {download.download?.downloaded || "0 MB"}
+                            </p>
+                          </div>
+                          <div className="border border-primary/30 p-3 bg-input/50">
+                            <p className="text-secondary font-bold">Speed</p>
+                            <p className="text-foreground font-mono mt-1">
+                              {download.download?.speed || "-- MB/s"}
+                            </p>
+                          </div>
+                          <div className="border border-primary/30 p-3 bg-input/50">
+                            <p className="text-secondary font-bold">ETA</p>
+                            <p className="text-foreground font-mono mt-1">
+                              {download.download?.eta || "--:--"}
+                            </p>
+                          </div>
+                          <div className="border border-primary/30 p-3 bg-input/50">
+                            <p className="text-secondary font-bold">Peers</p>
+                            <p className="text-foreground font-mono mt-1">
+                              {download.download?.peers || 0}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Controls - Só mostra se não for duplicata */}
+                      {!isDuplicate && (
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="flex-1 text-xs border-2 border-destructive"
+                            onClick={() => handleCancel(download.id)}
+                            disabled={cancelMutation.isPending}
+                          >
+                            <X className="w-4 h-4 mr-2" /> CANCEL
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           ) : (
             <Card className="cyber-card text-center py-12">

@@ -54,6 +54,18 @@ export interface BackendHealth {
 }
 
 /**
+ * Erro específico para jogos duplicados
+ * Permite que a UI trate duplicatas de forma diferente de outros erros
+ */
+export class DuplicateGameError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DuplicateGameError";
+    Object.setPrototypeOf(this, DuplicateGameError.prototype);
+  }
+}
+
+/**
  * Obtém credenciais Tinfoil do localStorage
  */
 function getTinfoilAuth(): string | null {
@@ -313,8 +325,25 @@ export async function uploadTorrentFile(
     body: formData,
   });
 
+  // 1. INTERCEPTAÇÃO ESTRATÉGICA DO 409 (Duplicata)
+  if (response.status === 409) {
+    let errorMessage = "Este jogo já existe no sistema.";
+    try {
+      const errorData = await response.json();
+      if (errorData && errorData.error) {
+        errorMessage = errorData.error;
+      } else if (errorData && errorData.message) {
+        errorMessage = errorData.message;
+      }
+    } catch (e) {
+      // Se não conseguir ler JSON, usa mensagem padrão
+    }
+    // Lança um erro tipado que a UI pode identificar
+    throw new DuplicateGameError(errorMessage);
+  }
+
   if (!response.ok) {
-    // Tratamento de erro similar ao fetchBackend
+    // Tratamento de erro para outros status codes
     let errorMessage = `Erro na requisição: ${response.status} ${response.statusText}`;
 
     try {
@@ -436,12 +465,21 @@ export async function downloadFromSearch(
     body: JSON.stringify({ command, gameName }),
   });
 
-  // Verifica se é erro de duplicata (409 Conflict)
+  // 1. INTERCEPTAÇÃO ESTRATÉGICA DO 409 (Duplicata)
   if (response.status === 409) {
-    const errorData = await response.json();
-    throw new Error(
-      errorData.error || "Este jogo já está na fila ou sendo baixado"
-    );
+    let errorMessage = "Este jogo já existe no sistema.";
+    try {
+      const errorData = await response.json();
+      if (errorData && errorData.error) {
+        errorMessage = errorData.error;
+      } else if (errorData && errorData.message) {
+        errorMessage = errorData.message;
+      }
+    } catch (e) {
+      // Se não conseguir ler JSON, usa mensagem padrão
+    }
+    // Lança um erro tipado que a UI pode identificar
+    throw new DuplicateGameError(errorMessage);
   }
 
   if (!response.ok) {
