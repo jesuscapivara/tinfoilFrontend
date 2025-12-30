@@ -26,6 +26,10 @@ export default function Login() {
       const cleanEmail = email.trim().toLowerCase();
       const cleanPassword = password.trim();
 
+      console.log("[LOGIN] Iniciando requisição de login...");
+      console.log("[LOGIN] Backend URL:", BACKEND_URL);
+      console.log("[LOGIN] Email:", cleanEmail);
+
       const response = await fetch(`${BACKEND_URL}/bridge/auth`, {
         method: "POST",
         headers: {
@@ -34,26 +38,34 @@ export default function Login() {
         body: JSON.stringify({ email: cleanEmail, password: cleanPassword }),
       });
 
+      console.log("[LOGIN] Status da resposta:", response.status);
+      console.log("[LOGIN] Headers:", Object.fromEntries(response.headers.entries()));
+
       // Verifica se a resposta é JSON
       const contentType = response.headers.get("content-type");
       let data;
       
       if (contentType && contentType.includes("application/json")) {
         data = await response.json();
+        console.log("[LOGIN] Dados recebidos:", { ...data, token: data.token ? "***TOKEN***" : "SEM TOKEN" });
       } else {
         const text = await response.text();
+        console.error("[LOGIN] Resposta não é JSON:", text);
         throw new Error(`Resposta inválida do servidor: ${text}`);
       }
 
       if (!response.ok) {
         // Se não foi sucesso, mostra o erro
+        console.error("[LOGIN] Erro na resposta:", data);
         setError(data.error || `Erro ${response.status}: ${response.statusText}`);
         return;
       }
 
       if (data.success && data.token) {
+        console.log("[LOGIN] Login bem-sucedido! Salvando token...");
         // Salva o token no localStorage
         localStorage.setItem("auth_token", data.token);
+        console.log("[LOGIN] Token salvo no localStorage");
         
         // Redireciona para o dashboard
         if (data.redirect) {
@@ -61,15 +73,18 @@ export default function Login() {
           const redirectPath = data.redirect.startsWith("http")
             ? new URL(data.redirect).pathname
             : data.redirect;
+          console.log("[LOGIN] Redirecionando para:", redirectPath);
           setLocation(redirectPath);
         } else {
+          console.log("[LOGIN] Redirecionando para /dashboard");
           setLocation("/dashboard");
         }
       } else {
+        console.error("[LOGIN] Resposta sem sucesso ou sem token:", data);
         setError(data.error || "Credenciais inválidas");
       }
     } catch (err) {
-      console.error("Erro no login:", err);
+      console.error("[LOGIN] Erro no login:", err);
       setError(err instanceof Error ? err.message : "Erro ao fazer login");
     } finally {
       setLoading(false);
