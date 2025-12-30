@@ -3,12 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   Upload,
-  Play,
-  Pause,
   X,
   CheckCircle2,
   AlertCircle,
   Loader2,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  HardDrive,
+  Network,
+  Cpu,
+  FileText,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -27,6 +31,10 @@ export default function DownloadsPage() {
   const [duplicateCountdowns, setDuplicateCountdowns] = useState<
     Record<string, number>
   >({});
+  // Rastreia IDs de duplicatas que já expiraram para não reiniciar o countdown
+  const [expiredDuplicates, setExpiredDuplicates] = useState<Set<string>>(
+    new Set()
+  );
   const queryClient = useQueryClient();
 
   // Mutation para upload (definida primeiro para garantir disponibilidade)
@@ -88,10 +96,12 @@ export default function DownloadsPage() {
       return getActiveDownloads(token);
     },
     enabled: !!user,
-    refetchInterval: 3000, // Atualiza a cada 3 segundos
+    refetchInterval: 1000, // ✅ Atualização mais rápida (1s) para ver o upload em tempo real
   });
 
   // Gerencia countdowns para duplicatas
+  // Efeito para iniciar o countdown de duplicatas
+  // IMPORTANTE: Não incluir duplicateCountdowns nas dependências para evitar loop infinito
   useEffect(() => {
     if (!downloads?.active) return;
 
@@ -99,22 +109,33 @@ export default function DownloadsPage() {
       const isError = download.phase === "error";
       const isDuplicate = isError && download.error?.includes("Duplicado");
 
-      if (isDuplicate && !duplicateCountdowns[download.id]) {
-        // Inicia countdown de 10 segundos
-        setDuplicateCountdowns(prev => ({
-          ...prev,
-          [download.id]: 10,
-        }));
-      } else if (!isDuplicate && duplicateCountdowns[download.id]) {
-        // Remove countdown se não for mais duplicata
-        setDuplicateCountdowns(prev => {
+      // Não reinicia countdown se já foi marcado como expirado
+      if (isDuplicate && expiredDuplicates.has(download.id)) {
+        return; // Ignora duplicatas que já expiraram
+      }
+
+      // Usa função de atualização funcional para evitar dependência de duplicateCountdowns
+      setDuplicateCountdowns(prev => {
+        const hasCountdown = prev[download.id] !== undefined;
+
+        if (isDuplicate && !hasCountdown) {
+          // Inicia countdown de 10 segundos apenas se não existir e não estiver expirado
+          return {
+            ...prev,
+            [download.id]: 10,
+          };
+        } else if (!isDuplicate && hasCountdown) {
+          // Remove countdown se não for mais duplicata
           const newCountdowns = { ...prev };
           delete newCountdowns[download.id];
           return newCountdowns;
-        });
-      }
+        }
+
+        // Retorna o estado anterior se não houver mudanças
+        return prev;
+      });
     });
-  }, [downloads?.active, duplicateCountdowns]);
+  }, [downloads?.active, expiredDuplicates]); // Adicionado expiredDuplicates para verificar
 
   // Atualiza countdowns a cada segundo
   useEffect(() => {
@@ -132,8 +153,15 @@ export default function DownloadsPage() {
           }
         });
 
-        // Se houver countdowns expirados, força atualização da lista
+        // Se houver countdowns expirados, marca como expirados e força atualização
         if (expiredIds.length > 0) {
+          // Marca os IDs como expirados para não reiniciar o countdown
+          setExpiredDuplicates(prev => {
+            const newSet = new Set(prev);
+            expiredIds.forEach(id => newSet.add(id));
+            return newSet;
+          });
+
           // Força atualização da query para que o backend remova o item
           queryClient.invalidateQueries({ queryKey: ["active-downloads"] });
         }
@@ -212,179 +240,288 @@ export default function DownloadsPage() {
             </Card>
           ) : downloads?.active && downloads.active.length > 0 ? (
             <div className="space-y-4">
-              {downloads.active.map((download: any) => {
-                // Determina se deve mostrar estatísticas ou mensagens de status
-                const showStats =
-                  download.phase === "downloading" ||
-                  download.phase === "uploading";
-                const isChecking = download.phase === "checking";
-                const isConnecting = download.phase === "connecting";
-                const isError = download.phase === "error";
-                const isDuplicate =
-                  isError && download.error?.includes("Duplicado");
+              {downloads.active
+                .filter((download: any) => {
+                  // Filtra duplicatas que já expiraram o countdown
+                  const isError = download.phase === "error";
+                  const isDuplicate =
+                    isError && download.error?.includes("Duplicado");
 
-                return (
-                  <Card key={download.id} className="cyber-card">
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-foreground">
-                            {download.name}
-                          </h3>
-                          <p className="text-xs text-secondary mt-2 font-mono">
-                            {isChecking && "🔍 CHECANDO DUPLICIDADE..."}
-                            {isConnecting && "📡 CONECTANDO AOS PARES..."}
-                            {download.phase === "downloading" &&
-                              "⬇ DOWNLOADING"}
-                            {download.phase === "uploading" && "⬆ UPLOADING"}
-                            {download.phase === "queued" && "⏳ QUEUED"}
-                            {download.phase === "paused" && "⏸ PAUSED"}
-                            {isError && !isDuplicate && "❌ ERRO"}
-                            {isDuplicate && "⚠️ DUPLICATA DETECTADA"}
-                          </p>
+                  if (isDuplicate) {
+                    // Não exibe duplicatas que já foram marcadas como expiradas
+                    if (expiredDuplicates.has(download.id)) {
+                      return false;
+                    }
+
+                    // Se é duplicata, só exibe se o countdown ainda estiver ativo (> 0)
+                    // Quando o countdown chega a 0, ele é removido do estado,
+                    // então se não existe no estado, não exibe
+                    const countdown = duplicateCountdowns[download.id];
+                    if (countdown === undefined || countdown <= 0) {
+                      return false; // Não exibe duplicatas expiradas
+                    }
+                  }
+
+                  // Para todos os outros casos, exibe normalmente
+                  return true;
+                })
+                .map((download: any) => {
+                  // Determina se deve mostrar estatísticas ou mensagens de status
+                  const showStats =
+                    download.phase === "downloading" ||
+                    download.phase === "uploading";
+                  const isChecking = download.phase === "checking";
+                  const isConnecting = download.phase === "connecting";
+                  const isError = download.phase === "error";
+                  const isDuplicate =
+                    isError && download.error?.includes("Duplicado");
+
+                  return (
+                    <Card key={download.id} className="cyber-card">
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-bold text-foreground">
+                              {download.name}
+                            </h3>
+                            <p className="text-xs text-secondary mt-2 font-mono">
+                              {isChecking && "🔍 CHECANDO DUPLICIDADE..."}
+                              {isConnecting && "📡 CONECTANDO AOS PARES..."}
+                              {download.phase === "downloading" &&
+                                "⬇ DOWNLOADING"}
+                              {download.phase === "uploading" && "⬆ UPLOADING"}
+                              {download.phase === "queued" && "⏳ QUEUED"}
+                              {download.phase === "paused" && "⏸ PAUSED"}
+                              {isError && !isDuplicate && "❌ ERRO"}
+                              {isDuplicate && "⚠️ DUPLICATA DETECTADA"}
+                            </p>
+                          </div>
+                          {showStats && (
+                            <div className="text-right">
+                              <p
+                                className={`text-3xl font-bold font-mono ${
+                                  download.phase === "uploading"
+                                    ? "text-purple-400"
+                                    : "text-primary"
+                                }`}
+                              >
+                                {download.phase === "uploading"
+                                  ? Number(
+                                      download.upload?.percent || 0
+                                    ).toFixed(1)
+                                  : Number(
+                                      download.download?.percent || 0
+                                    ).toFixed(1)}
+                                %
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        {showStats && (
-                          <div className="text-right">
-                            <p className="text-3xl font-bold text-primary">
-                              {download.download?.percent?.toFixed(0) || 0}%
+
+                        {/* Status Messages (antes das estatísticas) */}
+                        {isChecking && (
+                          <div className="bg-primary/10 border border-primary/50 p-6 rounded-lg text-center">
+                            <div className="flex items-center justify-center gap-3 mb-2">
+                              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                              <p className="text-primary font-bold text-lg">
+                                Verificando duplicidade...
+                              </p>
+                            </div>
+                            <p className="text-secondary text-sm font-mono">
+                              Analisando arquivos do torrent
                             </p>
                           </div>
                         )}
-                      </div>
 
-                      {/* Status Messages (antes das estatísticas) */}
-                      {isChecking && (
-                        <div className="bg-primary/10 border border-primary/50 p-6 rounded-lg text-center">
-                          <div className="flex items-center justify-center gap-3 mb-2">
-                            <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                            <p className="text-primary font-bold text-lg">
-                              Verificando duplicidade...
-                            </p>
-                          </div>
-                          <p className="text-secondary text-sm font-mono">
-                            Analisando arquivos do torrent
-                          </p>
-                        </div>
-                      )}
-
-                      {isConnecting && (
-                        <div className="bg-primary/10 border border-primary/50 p-6 rounded-lg text-center">
-                          <div className="flex items-center justify-center gap-3 mb-2">
-                            <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                            <p className="text-primary font-bold text-lg">
-                              Conectando aos pares...
-                            </p>
-                          </div>
-                          <p className="text-secondary text-sm font-mono">
-                            Aguardando conexão com outros usuários
-                          </p>
-                        </div>
-                      )}
-
-                      {isDuplicate && (
-                        <div className="bg-destructive/10 border border-destructive/50 p-6 rounded-lg text-center">
-                          <div className="flex items-center justify-center gap-3 mb-2">
-                            <AlertCircle className="w-5 h-5 text-destructive" />
-                            <p className="text-destructive font-bold text-lg">
-                              Duplicata Detectada
-                            </p>
-                          </div>
-                          <p className="text-secondary text-sm font-mono mb-2">
-                            {download.error?.replace("Duplicado! ", "") ||
-                              "Este jogo já existe no sistema"}
-                          </p>
-                          <div className="flex items-center justify-center gap-2 mt-4">
-                            <div className="relative w-16 h-16">
-                              <div className="absolute inset-0 rounded-full border-4 border-destructive/20" />
-                              <div
-                                className="absolute inset-0 rounded-full border-4 border-transparent border-t-destructive transition-transform duration-1000 ease-linear"
-                                style={{
-                                  transform: `rotate(${
-                                    360 -
-                                    (duplicateCountdowns[download.id] || 0) * 36
-                                  }deg)`,
-                                }}
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-2xl font-bold text-destructive">
-                                  {duplicateCountdowns[download.id] || 0}
-                                </span>
-                              </div>
+                        {isConnecting && (
+                          <div className="bg-primary/10 border border-primary/50 p-6 rounded-lg text-center">
+                            <div className="flex items-center justify-center gap-3 mb-2">
+                              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                              <p className="text-primary font-bold text-lg">
+                                Conectando aos pares...
+                              </p>
                             </div>
-                            <p className="text-xs text-secondary opacity-70">
-                              Removendo em{" "}
-                              {duplicateCountdowns[download.id] || 0} segundo
-                              {(duplicateCountdowns[download.id] || 0) !== 1
-                                ? "s"
-                                : ""}
-                              ...
+                            <p className="text-secondary text-sm font-mono">
+                              Aguardando conexão com outros usuários
                             </p>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Progress Bar - Só mostra se estiver baixando */}
-                      {showStats && (
-                        <div className="w-full h-2 bg-primary/20 border border-primary/50">
+                        {isDuplicate && (
+                          <div className="bg-destructive/10 border border-destructive/50 p-6 rounded-lg text-center">
+                            <div className="flex items-center justify-center gap-3 mb-2">
+                              <AlertCircle className="w-5 h-5 text-destructive" />
+                              <p className="text-destructive font-bold text-lg">
+                                Duplicata Detectada
+                              </p>
+                            </div>
+                            <p className="text-secondary text-sm font-mono mb-2">
+                              {download.error?.replace("Duplicado! ", "") ||
+                                "Este jogo já existe no sistema"}
+                            </p>
+                            <div className="flex items-center justify-center gap-2 mt-4">
+                              <div className="relative w-16 h-16">
+                                <div className="absolute inset-0 rounded-full border-4 border-destructive/20" />
+                                <div
+                                  className="absolute inset-0 rounded-full border-4 border-transparent border-t-destructive transition-transform duration-1000 ease-linear"
+                                  style={{
+                                    transform: `rotate(${
+                                      360 -
+                                      (duplicateCountdowns[download.id] || 0) *
+                                        36
+                                    }deg)`,
+                                  }}
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="text-2xl font-bold text-destructive">
+                                    {duplicateCountdowns[download.id] || 0}
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-xs text-secondary opacity-70">
+                                Removendo em{" "}
+                                {duplicateCountdowns[download.id] || 0} segundo
+                                {(duplicateCountdowns[download.id] || 0) !== 1
+                                  ? "s"
+                                  : ""}
+                                ...
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Progress Bar - Mostra para download e upload */}
+                        {showStats && (
                           <div
-                            className="h-full bg-primary transition-all duration-300"
-                            style={{
-                              width: `${download.download?.percent || 0}%`,
-                            }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Details Grid - Só mostra se estiver baixando */}
-                      {showStats && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                          <div className="border border-primary/30 p-3 bg-input/50">
-                            <p className="text-secondary font-bold">
-                              Downloaded
-                            </p>
-                            <p className="text-foreground font-mono mt-1">
-                              {download.download?.downloaded || "0 MB"}
-                            </p>
-                          </div>
-                          <div className="border border-primary/30 p-3 bg-input/50">
-                            <p className="text-secondary font-bold">Speed</p>
-                            <p className="text-foreground font-mono mt-1">
-                              {download.download?.speed || "-- MB/s"}
-                            </p>
-                          </div>
-                          <div className="border border-primary/30 p-3 bg-input/50">
-                            <p className="text-secondary font-bold">ETA</p>
-                            <p className="text-foreground font-mono mt-1">
-                              {download.download?.eta || "--:--"}
-                            </p>
-                          </div>
-                          <div className="border border-primary/30 p-3 bg-input/50">
-                            <p className="text-secondary font-bold">Peers</p>
-                            <p className="text-foreground font-mono mt-1">
-                              {download.download?.peers || 0}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Controls - Só mostra se não for duplicata */}
-                      {!isDuplicate && (
-                        <div className="flex gap-2 pt-2">
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="flex-1 text-xs border-2 border-destructive"
-                            onClick={() => handleCancel(download.id)}
-                            disabled={cancelMutation.isPending}
+                            className={`w-full h-2 rounded-full overflow-hidden border ${
+                              download.phase === "uploading"
+                                ? "bg-purple-500/20 border-purple-500/50"
+                                : "bg-primary/20 border-primary/50"
+                            }`}
                           >
-                            <X className="w-4 h-4 mr-2" /> CANCEL
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                );
-              })}
+                            <div
+                              className={`h-full transition-all duration-300 shadow-[0_0_10px_currentColor] ${
+                                download.phase === "uploading"
+                                  ? "bg-purple-500"
+                                  : "bg-primary"
+                              }`}
+                              style={{
+                                width: `${
+                                  download.phase === "uploading"
+                                    ? Number(download.upload?.percent || 0)
+                                    : Number(download.download?.percent || 0)
+                                }%`,
+                              }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Details Grid - Mostra informações diferentes para download vs upload */}
+                        {showStats && (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                            {/* Box 1: Velocidade */}
+                            <div className="border border-white/10 p-2 bg-black/20 rounded flex flex-col justify-center">
+                              <p className="text-secondary flex items-center gap-1">
+                                <Network className="w-3 h-3" /> Speed
+                              </p>
+                              <p className="text-foreground font-mono mt-1 font-bold">
+                                {download.phase === "uploading"
+                                  ? download.upload?.speed || "-- MB/s"
+                                  : download.download?.speed || "-- MB/s"}
+                              </p>
+                            </div>
+
+                            {/* Box 2: Tamanho/Progresso */}
+                            <div className="border border-white/10 p-2 bg-black/20 rounded flex flex-col justify-center">
+                              <p className="text-secondary flex items-center gap-1">
+                                <HardDrive className="w-3 h-3" /> Data
+                              </p>
+                              <p className="text-foreground font-mono mt-1">
+                                {download.phase === "uploading"
+                                  ? `${download.upload?.uploaded || "0 MB"} / ${download.upload?.total || "--"}`
+                                  : `${download.download?.downloaded || "0 MB"} / ${download.download?.total || "--"}`}
+                              </p>
+                            </div>
+
+                            {/* Box 3: Info Específica da Fase */}
+                            <div className="border border-white/10 p-2 bg-black/20 rounded flex flex-col justify-center">
+                              <p className="text-secondary flex items-center gap-1">
+                                {download.phase === "uploading" ? (
+                                  <FileText className="w-3 h-3" />
+                                ) : (
+                                  <Cpu className="w-3 h-3" />
+                                )}
+                                {download.phase === "uploading"
+                                  ? "Current File"
+                                  : "Peers"}
+                              </p>
+                              <p
+                                className="text-foreground font-mono mt-1 truncate"
+                                title={
+                                  download.phase === "uploading"
+                                    ? download.upload?.currentFile
+                                    : ""
+                                }
+                              >
+                                {download.phase === "uploading"
+                                  ? download.upload?.currentFile
+                                    ? `...${download.upload.currentFile.slice(-15)}`
+                                    : "Preparando..."
+                                  : download.download?.peers || 0}
+                              </p>
+                            </div>
+
+                            {/* Box 4: ETA / Files Count / Status */}
+                            <div className="border border-white/10 p-2 bg-black/20 rounded flex flex-col justify-center">
+                              <p className="text-secondary flex items-center gap-1">
+                                {download.phase === "uploading" ? (
+                                  <>
+                                    <ArrowUpCircle className="w-3 h-3" />{" "}
+                                    Progress
+                                  </>
+                                ) : (
+                                  <>
+                                    <ArrowDownCircle className="w-3 h-3" /> ETA
+                                  </>
+                                )}
+                              </p>
+                              <p className="text-foreground font-mono mt-1">
+                                {download.phase === "uploading"
+                                  ? `${download.upload?.fileIndex || 0} / ${download.upload?.totalFiles || 0} files`
+                                  : download.download?.eta || "--:--"}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Status Text Detalhado para Upload */}
+                        {download.phase === "uploading" &&
+                          download.upload?.status && (
+                            <div className="bg-purple-500/10 border border-purple-500/30 p-3 rounded text-center">
+                              <p className="text-purple-400 font-mono text-xs">
+                                ▸ {download.upload.status}
+                              </p>
+                            </div>
+                          )}
+
+                        {/* Controls - Só mostra se não for duplicata */}
+                        {!isDuplicate && (
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="flex-1 text-xs border-2 border-destructive"
+                              onClick={() => handleCancel(download.id)}
+                              disabled={cancelMutation.isPending}
+                            >
+                              <X className="w-4 h-4 mr-2" /> CANCEL
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })}
             </div>
           ) : (
             <Card className="cyber-card text-center py-12">
