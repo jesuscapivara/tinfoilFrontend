@@ -128,11 +128,13 @@ export default function SearchPage() {
       }
 
       // Reseta após erro para permitir tentar de novo
+      // Aumenta o tempo de leitura para 6 segundos se for erro de duplicata
+      const resetTimeout = isDuplicate ? 6000 : 4000;
       setTimeout(() => {
         setProcessingGame(null);
         setIsSuccess(false);
         setCountdown(null);
-      }, 4000); // Aumentado para 4s para dar tempo de ler a mensagem
+      }, resetTimeout);
     },
   });
 

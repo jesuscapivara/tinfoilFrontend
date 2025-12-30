@@ -125,9 +125,36 @@ async function fetchBackend(
       clearTinfoilAuth();
       // Opcional: window.location.href = '/login';
     }
-    throw new Error(
-      `Backend request failed: ${response.status} ${response.statusText}`
-    );
+
+    // 🔥 CORREÇÃO: Tenta ler a mensagem de erro enviada pelo Backend
+    let errorMessage = `Erro na requisição: ${response.status} ${response.statusText}`;
+
+    try {
+      // Clona a response para poder ler o body sem consumir o stream original
+      const clonedResponse = response.clone();
+      const errorData = await clonedResponse.json();
+      // Se o backend enviou { error: "Mensagem..." }, usamos ela!
+      if (errorData && errorData.error) {
+        errorMessage = errorData.error;
+      } else if (errorData && errorData.message) {
+        // Alguns endpoints podem usar "message" em vez de "error"
+        errorMessage = errorData.message;
+      }
+    } catch (e) {
+      // Se não for JSON, tenta ler como texto
+      try {
+        const clonedResponse = response.clone();
+        const textError = await clonedResponse.text();
+        if (textError && textError.trim()) {
+          errorMessage = textError;
+        }
+      } catch (e2) {
+        // Falha silenciosa, usa mensagem padrão
+      }
+    }
+
+    // Lança o erro com a mensagem real do backend (ex: "Este jogo já existe...")
+    throw new Error(errorMessage);
   }
 
   return response;
@@ -263,17 +290,55 @@ export async function getBackendPendingUsers(jwtToken: string): Promise<any[]> {
  * Faz upload de arquivo torrent
  */
 export async function uploadTorrentFile(
-  fileName: string,
-  fileData: string,
+  file: File,
   jwtToken: string
 ): Promise<{ success: boolean; downloadId: string; message: string }> {
-  const response = await fetchBackend("/bridge/upload", {
+  // Usa FormData para enviar o arquivo como multipart/form-data
+  const formData = new FormData();
+  formData.append("torrentFile", file);
+
+  const BACKEND_URL =
+    import.meta.env.VITE_BACKEND_API_URL || "http://localhost:8080";
+  const cleanBase = BACKEND_URL.endsWith("/")
+    ? BACKEND_URL.slice(0, -1)
+    : BACKEND_URL;
+  const url = `${cleanBase}/bridge/upload-torrent`;
+
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${jwtToken}`,
+      // NÃO adiciona Content-Type - o browser vai adicionar automaticamente com boundary
     },
-    body: JSON.stringify({ fileName, fileData }),
+    body: formData,
   });
+
+  if (!response.ok) {
+    // Tratamento de erro similar ao fetchBackend
+    let errorMessage = `Erro na requisição: ${response.status} ${response.statusText}`;
+
+    try {
+      const clonedResponse = response.clone();
+      const errorData = await clonedResponse.json();
+      if (errorData && errorData.error) {
+        errorMessage = errorData.error;
+      } else if (errorData && errorData.message) {
+        errorMessage = errorData.message;
+      }
+    } catch (e) {
+      try {
+        const clonedResponse = response.clone();
+        const textError = await clonedResponse.text();
+        if (textError && textError.trim()) {
+          errorMessage = textError;
+        }
+      } catch (e2) {
+        // Falha silenciosa, usa mensagem padrão
+      }
+    }
+
+    throw new Error(errorMessage);
+  }
 
   return response.json();
 }

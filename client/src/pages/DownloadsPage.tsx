@@ -21,6 +21,7 @@ import { toast } from "sonner";
 export default function DownloadsPage() {
   const { user, loading: authLoading } = useAuth();
   const [fileInput, setFileInput] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const queryClient = useQueryClient();
 
   // Mutation para upload (definida primeiro para garantir disponibilidade)
@@ -29,20 +30,7 @@ export default function DownloadsPage() {
       const token = localStorage.getItem("auth_token");
       if (!token) throw new Error("Token não encontrado");
 
-      // Converte arquivo para base64
-      const fileData = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          // Remove o prefixo data:application/octet-stream;base64,
-          const base64 = result.split(",")[1] || result;
-          resolve(base64);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      return uploadTorrentFile(file.name, fileData, token);
+      return uploadTorrentFile(file, token);
     },
     onSuccess: () => {
       toast.success("Torrent enviado com sucesso!");
@@ -135,45 +123,7 @@ export default function DownloadsPage() {
       </div>
 
       <div className="container py-12">
-        {/* Upload Section */}
-        <Card className="cyber-card mb-12">
-          <h2 className="text-xl font-bold text-primary uppercase tracking-wider mb-6">
-            Upload Torrent
-          </h2>
-
-          <div className="space-y-4">
-            <div className="border-2 border-dashed border-primary/60 p-8 text-center hover:border-primary transition-colors bg-input/30">
-              <Upload className="w-16 h-16 text-secondary mx-auto mb-4 opacity-60" />
-              <input
-                type="file"
-                accept=".torrent"
-                onChange={handleFileChange}
-                className="hidden"
-                id="torrent-input"
-              />
-              <label htmlFor="torrent-input" className="cursor-pointer block">
-                <p className="text-foreground font-bold mb-2">
-                  {fileInput
-                    ? `✓ ${fileInput.name}`
-                    : "Click to select .torrent file"}
-                </p>
-                <p className="text-xs text-secondary">or drag and drop</p>
-              </label>
-            </div>
-
-            <Button
-              className="cyber-btn w-full"
-              onClick={handleUpload}
-              disabled={!fileInput || uploadMutation.isPending}
-            >
-              {uploadMutation.isPending
-                ? "⟳ UPLOADING..."
-                : "▶ QUEUE DOWNLOAD"}
-            </Button>
-          </div>
-        </Card>
-
-        {/* Active Downloads */}
+        {/* Active Downloads - MOVED TO TOP */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-primary uppercase tracking-widest mb-6 flex items-center gap-3">
             <span className="text-secondary">▸</span>
@@ -304,6 +254,78 @@ export default function DownloadsPage() {
             </Card>
           </div>
         )}
+
+        {/* Upload Section - MOVED TO BOTTOM */}
+        <Card className="cyber-card mt-12">
+          <h2 className="text-xl font-bold text-primary uppercase tracking-wider mb-6">
+            Upload Torrent
+          </h2>
+
+          <div className="space-y-4">
+            <div
+              className={`border-2 border-dashed p-8 text-center transition-colors bg-input/30 ${
+                isDragging
+                  ? "border-primary bg-primary/10"
+                  : "border-primary/60 hover:border-primary"
+              }`}
+              onDragOver={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(true);
+              }}
+              onDragLeave={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+              }}
+              onDrop={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                  const file = files[0];
+                  if (file.name.endsWith(".torrent")) {
+                    setFileInput(file);
+                    toast.success(`Arquivo "${file.name}" selecionado`);
+                  } else {
+                    toast.error(
+                      "Por favor, selecione um arquivo .torrent válido"
+                    );
+                  }
+                }
+              }}
+            >
+              <Upload className="w-16 h-16 text-secondary mx-auto mb-4 opacity-60" />
+              <input
+                type="file"
+                accept=".torrent"
+                onChange={handleFileChange}
+                className="hidden"
+                id="torrent-input"
+              />
+              <label htmlFor="torrent-input" className="cursor-pointer block">
+                <p className="text-foreground font-bold mb-2">
+                  {fileInput
+                    ? `✓ ${fileInput.name}`
+                    : "Click to select .torrent file"}
+                </p>
+                <p className="text-xs text-secondary">or drag and drop</p>
+              </label>
+            </div>
+
+            <Button
+              className="cyber-btn w-full"
+              onClick={handleUpload}
+              disabled={!fileInput || uploadMutation.isPending}
+            >
+              {uploadMutation.isPending
+                ? "⟳ UPLOADING..."
+                : "▶ QUEUE DOWNLOAD"}
+            </Button>
+          </div>
+        </Card>
       </div>
     </div>
   );
