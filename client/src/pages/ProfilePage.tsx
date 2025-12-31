@@ -107,7 +107,7 @@ export default function ProfilePage() {
       <div className="container py-12">
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Header */}
-          <div className="border-b-2 border-primary bg-card/80 backdrop-blur">
+          <header className="border-b-2 border-primary bg-card/80 backdrop-blur">
             <div className="container py-8">
               <div className="flex items-center gap-4">
                 <User className="w-8 h-8 text-secondary" />
@@ -121,7 +121,7 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
-          </div>
+          </header>
 
           {/* Account Info */}
           <Card className="cyber-card">

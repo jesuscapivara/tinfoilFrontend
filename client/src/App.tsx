@@ -68,7 +68,7 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <Navigation />
-            <main>
+            <main role="main" aria-label="Conteúdo principal">
               <Router />
             </main>
           </TooltipProvider>

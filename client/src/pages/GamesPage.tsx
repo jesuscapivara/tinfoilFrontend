@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -375,215 +376,226 @@ export default function GamesPage() {
             </p>
           </Card>
         ) : filteredGames && filteredGames.length > 0 ? (
-          <div
-            key={`games-grid-${activeTab}-${searchTerm}`}
-            className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
-          >
-            {activeTab === "base"
-              ? (filteredGames as GroupedGame[]).map((group: GroupedGame) => {
-                  // Garante que só renderiza se for realmente um jogo BASE
-                  if (!group.base?.id || !group.base.id.endsWith("000")) {
-                    return null;
-                  }
-                  const imageUrl = getImageId(group.base, allGames);
-                  const tinfoilUrl = group.base.id
-                    ? `https://tinfoil.io/Title/${group.base.id}`
-                    : "#";
-                  const hasRelated =
-                    group.dlcs.length > 0 || group.updates.length > 0;
+          <>
+            <h2 className="sr-only">
+              {activeTab === "base"
+                ? "Lista de jogos base"
+                : activeTab === "dlc"
+                  ? "Lista de DLCs"
+                  : activeTab === "update"
+                    ? "Lista de updates"
+                    : "Lista de todos os jogos"}
+            </h2>
+            <div
+              key={`games-grid-${activeTab}-${searchTerm}`}
+              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
+            >
+              {activeTab === "base"
+                ? (filteredGames as GroupedGame[]).map((group: GroupedGame) => {
+                    // Garante que só renderiza se for realmente um jogo BASE
+                    if (!group.base?.id || !group.base.id.endsWith("000")) {
+                      return null;
+                    }
+                    const imageUrl = getImageId(group.base, allGames);
+                    const tinfoilUrl = group.base.id
+                      ? `https://tinfoil.io/Title/${group.base.id}`
+                      : "#";
+                    const hasRelated =
+                      group.dlcs.length > 0 || group.updates.length > 0;
 
-                  return (
-                    <Card
-                      key={group.base.id || group.base.url}
-                      className="cyber-card group hover:shadow-neon transition-all duration-300 cursor-pointer"
-                      onClick={() => handleCardClick(group)}
-                    >
-                      <div className="p-4 space-y-3">
-                        {/* Imagem do jogo */}
-                        <div className="relative w-full aspect-square">
-                          <img
-                            src={imageUrl}
-                            alt={group.base.name}
-                            className="w-full h-full rounded-lg object-cover bg-black"
-                            onError={e => {
-                              (e.target as HTMLImageElement).src =
-                                "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
-                            }}
-                          />
-                        </div>
-
-                        {/* Informações do jogo */}
-                        <div>
-                          <h3
-                            className="text-foreground font-bold text-sm group-hover:text-primary transition-colors line-clamp-2 mb-2"
-                            title={group.base.name}
-                          >
-                            {group.base.name}
-                          </h3>
-
-                          <div className="flex flex-wrap gap-2 items-center mb-3 text-xs">
-                            <Badge
-                              variant="outline"
-                              className="text-xs font-mono"
-                            >
-                              {formatSize(group.base.size)}
-                            </Badge>
-                            {hasRelated && (
-                              <Badge variant="outline" className="text-xs">
-                                {group.dlcs.length} DLC
-                                {group.dlcs.length !== 1 ? "s" : ""} •{" "}
-                                {group.updates.length} Update
-                                {group.updates.length !== 1 ? "s" : ""}
-                              </Badge>
-                            )}
-                          </div>
-
-                          {/* Botões de ação */}
-                          <div className="flex flex-col gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={e => {
-                                e.stopPropagation(); // Previne que o clique abra o modal
-                                navigator.clipboard.writeText(group.base.url);
-                                toast.success("URL copiada!");
+                    return (
+                      <Card
+                        key={group.base.id || group.base.url}
+                        className="cyber-card group hover:shadow-neon transition-all duration-300 cursor-pointer"
+                        onClick={() => handleCardClick(group)}
+                      >
+                        <div className="p-4 space-y-3">
+                          {/* Imagem do jogo */}
+                          <div className="relative w-full aspect-square">
+                            <img
+                              src={imageUrl}
+                              alt={group.base.name}
+                              className="w-full h-full rounded-lg object-cover bg-black"
+                              onError={e => {
+                                (e.target as HTMLImageElement).src =
+                                  "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
                               }}
-                              className="w-full border-primary/60 hover:border-primary hover:bg-primary/10 text-xs"
-                            >
-                              <Copy className="w-3 h-3 mr-1" />
-                              Download
-                            </Button>
-                            {group.base.id && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={e => {
-                                  e.stopPropagation(); // Previne que o clique abra o modal
-                                  window.open(tinfoilUrl, "_blank");
-                                }}
-                                className="w-full border-primary/60 hover:border-primary hover:bg-primary/10 text-xs"
-                              >
-                                <ExternalLink className="w-3 h-3 mr-1" />
-                                Info
-                              </Button>
-                            )}
+                            />
                           </div>
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })
-              : (filteredGames as BackendGame[]).map((game: BackendGame) => {
-                  // Validação extra: garante que o jogo corresponde ao filtro ativo
-                  const gameType = getGameType(game.id);
 
-                  // Validação por tipo de tab
-                  if (activeTab === "dlc" && gameType !== "DLC") {
-                    return null;
-                  }
-                  if (activeTab === "update" && gameType !== "UPDATE") {
-                    return null;
-                  }
-
-                  const imageUrl = getImageId(game, allGames);
-                  const tinfoilUrl = game.id
-                    ? `https://tinfoil.io/Title/${game.id.substring(0, 13) + "000"}`
-                    : "#";
-
-                  return (
-                    <Card
-                      key={game.id || game.url}
-                      className="cyber-card group hover:shadow-neon transition-all duration-300 cursor-pointer"
-                      onClick={() => handleIndividualGameClick(game)}
-                    >
-                      <div className="p-4 space-y-3">
-                        {/* Imagem do jogo */}
-                        <div className="relative w-full aspect-square">
-                          <img
-                            src={imageUrl}
-                            alt={game.name}
-                            className="w-full h-full rounded-lg object-cover bg-black"
-                            onError={e => {
-                              (e.target as HTMLImageElement).src =
-                                "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
-                            }}
-                          />
-                          {/* Badge de tipo */}
-                          {gameType !== "BASE" && gameType !== "UNKNOWN" && (
-                            <Badge
-                              className={`absolute bottom-2 right-2 text-xs font-bold ${
-                                gameType === "UPDATE"
-                                  ? "bg-orange-500/90 text-white"
-                                  : "bg-purple-500/90 text-white"
-                              }`}
+                          {/* Informações do jogo */}
+                          <div>
+                            <h2
+                              className="text-foreground font-bold text-sm group-hover:text-primary transition-colors line-clamp-2 mb-2"
+                              title={group.base.name}
                             >
-                              {gameType}
-                            </Badge>
-                          )}
-                        </div>
+                              {group.base.name}
+                            </h2>
 
-                        {/* Informações do jogo */}
-                        <div>
-                          <h3
-                            className="text-foreground font-bold text-sm group-hover:text-primary transition-colors line-clamp-2 mb-2"
-                            title={game.name}
-                          >
-                            {game.name}
-                          </h3>
-
-                          <div className="flex flex-wrap gap-2 items-center mb-3 text-xs">
-                            <Badge
-                              variant="outline"
-                              className="text-xs font-mono"
-                            >
-                              {formatSize(game.size)}
-                            </Badge>
-                            {game.id && (
+                            <div className="flex flex-wrap gap-2 items-center mb-3 text-xs">
                               <Badge
                                 variant="outline"
-                                className="text-xs font-mono opacity-70"
+                                className="text-xs font-mono"
                               >
-                                {game.id}
+                                {formatSize(group.base.size)}
                               </Badge>
-                            )}
-                          </div>
+                              {hasRelated && (
+                                <Badge variant="outline" className="text-xs">
+                                  {group.dlcs.length} DLC
+                                  {group.dlcs.length !== 1 ? "s" : ""} •{" "}
+                                  {group.updates.length} Update
+                                  {group.updates.length !== 1 ? "s" : ""}
+                                </Badge>
+                              )}
+                            </div>
 
-                          {/* Botões de ação */}
-                          <div className="flex flex-col gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={e => {
-                                e.stopPropagation(); // Previne que o clique abra o modal
-                                navigator.clipboard.writeText(game.url);
-                                toast.success("URL copiada!");
-                              }}
-                              className="w-full border-primary/60 hover:border-primary hover:bg-primary/10 text-xs"
-                            >
-                              <Copy className="w-3 h-3 mr-1" />
-                              Download
-                            </Button>
-                            {game.id && (
+                            {/* Botões de ação */}
+                            <div className="flex flex-col gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={e => {
                                   e.stopPropagation(); // Previne que o clique abra o modal
-                                  window.open(tinfoilUrl, "_blank");
+                                  navigator.clipboard.writeText(group.base.url);
+                                  toast.success("URL copiada!");
                                 }}
                                 className="w-full border-primary/60 hover:border-primary hover:bg-primary/10 text-xs"
                               >
-                                <ExternalLink className="w-3 h-3 mr-1" />
-                                Info
+                                <Copy className="w-3 h-3 mr-1" />
+                                Download
                               </Button>
-                            )}
+                              {group.base.id && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={e => {
+                                    e.stopPropagation(); // Previne que o clique abra o modal
+                                    window.open(tinfoilUrl, "_blank");
+                                  }}
+                                  className="w-full border-primary/60 hover:border-primary hover:bg-primary/10 text-xs"
+                                >
+                                  <ExternalLink className="w-3 h-3 mr-1" />
+                                  Info
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-          </div>
+                      </Card>
+                    );
+                  })
+                : (filteredGames as BackendGame[]).map((game: BackendGame) => {
+                    // Validação extra: garante que o jogo corresponde ao filtro ativo
+                    const gameType = getGameType(game.id);
+
+                    // Validação por tipo de tab
+                    if (activeTab === "dlc" && gameType !== "DLC") {
+                      return null;
+                    }
+                    if (activeTab === "update" && gameType !== "UPDATE") {
+                      return null;
+                    }
+
+                    const imageUrl = getImageId(game, allGames);
+                    const tinfoilUrl = game.id
+                      ? `https://tinfoil.io/Title/${game.id.substring(0, 13) + "000"}`
+                      : "#";
+
+                    return (
+                      <Card
+                        key={game.id || game.url}
+                        className="cyber-card group hover:shadow-neon transition-all duration-300 cursor-pointer"
+                        onClick={() => handleIndividualGameClick(game)}
+                      >
+                        <div className="p-4 space-y-3">
+                          {/* Imagem do jogo */}
+                          <div className="relative w-full aspect-square">
+                            <img
+                              src={imageUrl}
+                              alt={game.name}
+                              className="w-full h-full rounded-lg object-cover bg-black"
+                              onError={e => {
+                                (e.target as HTMLImageElement).src =
+                                  "https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg";
+                              }}
+                            />
+                            {/* Badge de tipo */}
+                            {gameType !== "BASE" && gameType !== "UNKNOWN" && (
+                              <Badge
+                                className={`absolute bottom-2 right-2 text-xs font-bold ${
+                                  gameType === "UPDATE"
+                                    ? "bg-orange-500/90 text-white"
+                                    : "bg-purple-500/90 text-white"
+                                }`}
+                              >
+                                {gameType}
+                              </Badge>
+                            )}
+                          </div>
+
+                          {/* Informações do jogo */}
+                          <div>
+                            <h2
+                              className="text-foreground font-bold text-sm group-hover:text-primary transition-colors line-clamp-2 mb-2"
+                              title={game.name}
+                            >
+                              {game.name}
+                            </h2>
+
+                            <div className="flex flex-wrap gap-2 items-center mb-3 text-xs">
+                              <Badge
+                                variant="outline"
+                                className="text-xs font-mono"
+                              >
+                                {formatSize(game.size)}
+                              </Badge>
+                              {game.id && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs font-mono opacity-70"
+                                >
+                                  {game.id}
+                                </Badge>
+                              )}
+                            </div>
+
+                            {/* Botões de ação */}
+                            <div className="flex flex-col gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={e => {
+                                  e.stopPropagation(); // Previne que o clique abra o modal
+                                  navigator.clipboard.writeText(game.url);
+                                  toast.success("URL copiada!");
+                                }}
+                                className="w-full border-primary/60 hover:border-primary hover:bg-primary/10 text-xs"
+                              >
+                                <Copy className="w-3 h-3 mr-1" />
+                                Download
+                              </Button>
+                              {game.id && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={e => {
+                                    e.stopPropagation(); // Previne que o clique abra o modal
+                                    window.open(tinfoilUrl, "_blank");
+                                  }}
+                                  className="w-full border-primary/60 hover:border-primary hover:bg-primary/10 text-xs"
+                                >
+                                  <ExternalLink className="w-3 h-3 mr-1" />
+                                  Info
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+            </div>
+          </>
         ) : (
           <Card className="cyber-card text-center py-16">
             <Database className="w-16 h-16 text-secondary mx-auto mb-4 opacity-40" />
@@ -608,6 +620,9 @@ export default function GamesPage() {
                 <DialogTitle className="text-2xl">
                   {selectedGameGroup.base.name}
                 </DialogTitle>
+                <DialogDescription>
+                  Detalhes do jogo, incluindo DLCs e updates disponíveis
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-6 mt-4">
                 {/* Informações do Jogo Base */}
