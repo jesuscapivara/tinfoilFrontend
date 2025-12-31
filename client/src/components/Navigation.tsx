@@ -55,7 +55,7 @@ export function Navigation() {
                 href="/dashboard"
                 className="text-2xl font-bold text-primary uppercase tracking-widest hover:text-secondary transition-colors"
               >
-                ▲ TINFOIL ▼
+                ▲ CAPIVARA SHOP ▼
               </Link>
 
               {/* Desktop Menu */}

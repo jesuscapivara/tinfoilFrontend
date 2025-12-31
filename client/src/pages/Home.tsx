@@ -45,7 +45,7 @@ export default function Home() {
           <div className="container py-6">
             <div className="flex justify-between items-center">
               <h1 className="text-3xl font-bold text-primary uppercase tracking-widest">
-                ▲ TINFOIL SHOP ▼
+                ▲ CAPIVARA SHOP ▼
               </h1>
               <div className="flex gap-3">
                 <Link href="/login">
