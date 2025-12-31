@@ -133,16 +133,19 @@ export function Navigation() {
           </>
         ) : (
           // Placeholder invisível com altura fixa para evitar layout shift
+          // Usa apenas CSS para esconder visualmente, sem aria-hidden para evitar problemas de acessibilidade
           <div
-            className="flex justify-between items-center"
+            className="flex justify-between items-center pointer-events-none"
             style={{ minHeight: "3rem" }}
-            aria-hidden="true"
           >
-            <div className="text-2xl font-bold text-transparent">
-              ▲ TINFOIL ▼
+            <span className="sr-only">Carregando navegação...</span>
+            <div className="text-2xl font-bold text-transparent select-none">
+              ▲ CAPIVARA SHOP ▼
             </div>
             <div className="hidden md:flex items-center gap-8">
-              <div className="text-sm font-bold text-transparent">Menu</div>
+              <div className="text-sm font-bold text-transparent select-none">
+                Menu
+              </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="w-20 h-8"></div>
